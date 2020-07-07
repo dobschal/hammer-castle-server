@@ -8,10 +8,10 @@ const cors = require("cors");
 
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
-if (process.env.adminPassword === undefined) {
+if (process.env.ADMIN_PASSWORD === undefined) {
   throw new Error("Missing admin password");
 }
-if (process.env.secret === undefined) {
+if (process.env.SECRET === undefined) {
   throw new Error("Missing server secret!");
 }
 
@@ -86,6 +86,6 @@ setInterval(() => {
 
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
-http.listen(8080, () => {
-  console.log("[app] Listening on *:" + 8080);
+http.listen(8082, () => {
+  console.log("[app] Listening on *:" + 8082);
 });

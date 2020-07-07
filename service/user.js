@@ -21,7 +21,7 @@ function create({ username, password }) {
     .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
     .get(username);
   if (amount > 0) throw new ConflictError("Username is already taken.");
-  password = security.encrypt(password, process.env.secret);
+  password = security.encrypt(password, process.env.SECRET);
   const { lastInsertRowid: userId } = db
     .prepare("INSERT INTO user (username, password) VALUES (?, ?)")
     .run(username, password);
@@ -32,7 +32,7 @@ function create({ username, password }) {
 }
 
 function authenticate({ username, password }) {
-  password = security.encrypt(password, process.env.secret);
+  password = security.encrypt(password, process.env.SECRET);
   const user = db
     .prepare(
       `
@@ -53,7 +53,7 @@ function authenticate({ username, password }) {
     ...user
   };
   schema.is(userTokenBody, "UserTokenBody");
-  const token = security.signedUserToken(userTokenBody, process.env.secret);
+  const token = security.signedUserToken(userTokenBody, process.env.SECRET);
   return { token };
 }
 

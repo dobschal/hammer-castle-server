@@ -17,7 +17,7 @@ function getTokenBody(req) {
   if (!token) {
     throw new UnauthorisedError("Missing auth token.");
   }
-  return security.getValidTokenBody(token, process.env.secret);
+  return security.getValidTokenBody(token, process.env.SECRET);
 }
 
 module.exports = { getTokenFromRequest, getTokenBody };

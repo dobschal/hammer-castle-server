@@ -31,7 +31,7 @@ function init(http) {
     try {
       const tokenBody = security.getValidTokenBody(
         socket.handshake.query.token,
-        process.env.secret
+        process.env.SECRET
       );
       schema.is(tokenBody, "UserTokenBody");
       const user = userService.getUserFromTokenBody(tokenBody);

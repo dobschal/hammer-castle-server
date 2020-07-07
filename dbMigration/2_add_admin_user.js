@@ -15,7 +15,7 @@ module.exports = function(app) {
     .prepare(`INSERT INTO user (username,password) values (?, ?)`)
     .run(
       "admin",
-      security.encrypt(process.env.adminPassword, process.env.secret)
+      security.encrypt(process.env.ADMIN_PASSWORD, process.env.SECRET)
     );
 
   const result3 = db
