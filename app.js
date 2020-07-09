@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, "static")));
 
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
-//  Load and instanciate controllers
+//  Load and instantiate controllers
 const controllerDirPath = path.join(__dirname, "controller");
 const fileExtension = ".js";
 fs.readdir(controllerDirPath, function(err, files) {
@@ -43,7 +43,7 @@ fs.readdir(controllerDirPath, function(err, files) {
   });
 
   //  Error handler
-  app.use(function(err, req, res, next) {
+  app.use(function(err, req, res) {
     console.log("[app] Error response: ", err);
     res.status(err.status || 500).send({
       message: err.message || "An unhandled error occurred.",
