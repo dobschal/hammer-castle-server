@@ -12,10 +12,12 @@ module.exports = function(app) {
     .run();
 
   const result2 = db
-    .prepare(`INSERT INTO user (username,password) values (?, ?)`)
+      .prepare(`INSERT INTO user (username, password, color)
+                values (?, ?, ?)`)
     .run(
-      "admin",
-      security.encrypt(process.env.ADMIN_PASSWORD, process.env.SECRET)
+        "admin",
+        security.encrypt(process.env.ADMIN_PASSWORD, process.env.SECRET),
+        "#ff695d"
     );
 
   const result3 = db

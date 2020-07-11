@@ -9,7 +9,9 @@ function create(castlePosition, user) {
 }
 
 function getAll() {
-  return db.prepare(`SELECT * FROM castle;`).all();
+  const castles = db.prepare(`SELECT castle.x, castle.y, castle.user_id, user.color, user.username FROM castle JOIN user ON castle.user_id = user.id;`).all();
+  console.log("[castle] Got all castles: ", castles);
+  return castles;
 }
 
 module.exports = { create, getAll };

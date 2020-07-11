@@ -8,6 +8,11 @@ router.get("/", hasUserRole(["ADMIN"]), function(req, res) {
   res.send(userService.getAllUsers());
 });
 
+router.get("/current", hasUserRole(["USER"]), function(req, res) {
+  const user = userService.currentUser(req);
+  res.send(user);
+});
+
 router.post("/register", function(req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
