@@ -2,16 +2,18 @@ const security = require("../lib/security");
 const schema = require("../lib/schema");
 const userService = require("../service/user");
 
-let io;
-const connections = {};
+const websocket = {
+  io: undefined,
+  connections: {}
+};
 
 function init(http) {
-  if (io) {
-    return { io, connections };
+  if (websocket.io) {
+    return websocket;
   }
 
   //    Initialize socket.io and allow CORS
-  io = require("socket.io")(http, {
+  websocket.io = require("socket.io")(http, {
     handlePreflightRequest: (req, res) => {
       const headers = {
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -24,14 +26,14 @@ function init(http) {
   });
 
   //   Apply token authentication
-  io.use(function(socket, next) {
+  websocket.io.use(function (socket, next) {
     if (!socket.handshake.query || !socket.handshake.query.token) {
       return next(new Error("Authentication error"));
     }
     try {
       const tokenBody = security.getValidTokenBody(
-        socket.handshake.query.token,
-        process.env.SECRET
+          socket.handshake.query.token,
+          process.env.SECRET
       );
       schema.is(tokenBody, "UserTokenBody");
       const user = userService.getUserFromTokenBody(tokenBody);
@@ -42,13 +44,13 @@ function init(http) {
     }
   }).on("connection", socket => {
     console.log("[app] User connected: ", socket.user.username);
-    connections[socket.user.username] = socket;
+    websocket.connections[socket.user.username] = socket;
     socket.on("disconnect", () => {
       console.log("[app] User disconnected: ", socket.user.username);
-      delete connections[socket.user.username];
+      delete websocket.connections[socket.user.username];
     });
   });
-  return { io, connections };
+  return websocket;
 }
 
-module.exports = { init };
+module.exports = {init, ...websocket};

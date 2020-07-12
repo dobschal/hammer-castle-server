@@ -22,10 +22,10 @@ router.post("/register", function(req, res) {
   });
 });
 
-router.post("/authenticate", function(req, res) {
+router.post("/authenticate", function(req, res, next) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
-  const { token } = userService.authenticate(requestBody);
+  const {token} = userService.authenticate(requestBody);
   res.send({
     success: true,
     token
