@@ -10,8 +10,9 @@ function create(castlePosition, user) {
       .prepare(`INSERT INTO castle (user_id, x, y)
                 VALUES (?, ?, ?);`)
       .run(user.id, castlePosition.x, castlePosition.y);
-
   console.log("Castle created: ", result);
+  updateCastlePointsAndOwner();
+  return getOne(castlePosition);
 }
 
 /**
@@ -27,7 +28,7 @@ function create(castlePosition, user) {
  * @return Castle[]
  */
 function getAll(cached) {
-  if(cached) return castles;
+  if (cached) return castles;
   return db.prepare(`
     SELECT castle.x, castle.y, castle.user_id, user.color, user.username
     FROM castle
@@ -35,11 +36,21 @@ function getAll(cached) {
   `).all();
 }
 
+function getOne({x, y}) {
+  return db.prepare(`
+    SELECT castle.x, castle.y, castle.user_id, user.color, user.username
+    FROM castle
+           JOIN user ON castle.user_id = user.id
+    WHERE castle.x = ?
+      AND castle.y = ?;
+  `).get(x, y);
+}
+
 function changeCastlesUser(x, y, newUserId) {
   return db.prepare("UPDATE castle SET user_id=? WHERE x=? AND y=?").run(newUserId, x, y);
 }
 
-setInterval(function conquerScheduler() {
+function updateCastlePointsAndOwner() {
   const t1 = Date.now();
   castles = getAll(false).map(c => {
     c.points = {};
@@ -73,6 +84,8 @@ setInterval(function conquerScheduler() {
     }
   });
   console.log("[castle] Conquer scheduler ran in " + (Date.now() - t1) + "ms");
-}, 2000);
+}
+
+setInterval(updateCastlePointsAndOwner, 2000);
 
 module.exports = {create, getAll};

@@ -10,9 +10,9 @@ router.post("/create", hasUserRole(["USER"]), function(req, res) {
   schema.is(requestBody, "request/CastlePosition");
   const user = userService.currentUser(req);
   schema.is(user, "entity/User");
-  castleService.create(requestBody, user);
   res.send({
-    success: true
+    success: true,
+    castle: castleService.create(requestBody, user)
   });
 });
 
