@@ -64,7 +64,7 @@ setInterval(function conquerScheduler() {
     if (userId !== c.user_id) {
       changeCastlesUser(c.x, c.y, userId);
       Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit("CASTLE_CONQUER", {
-        x: c.x, y: c.y, userId: userId
+        x: c.x, y: c.y, userId: userId, username: c.username, color: c.color
       }));
     }
   });
