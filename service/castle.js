@@ -3,6 +3,8 @@ const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocket");
 
+let castles = [];
+
 function create(castlePosition, user) {
   const result = db
       .prepare(`INSERT INTO castle (user_id, x, y)
@@ -21,9 +23,11 @@ function create(castlePosition, user) {
  * @property {string} username
  * @property {string} color
  *
+ *  @param {boolean} cached - use cached version?
  * @return Castle[]
  */
-function getAll() {
+function getAll(cached) {
+  if(cached) return castles;
   return db.prepare(`
     SELECT castle.x, castle.y, castle.user_id, user.color, user.username
     FROM castle
@@ -37,7 +41,7 @@ function changeCastlesUser(x, y, newUserId) {
 
 setInterval(function conquerScheduler() {
   const t1 = Date.now();
-  const castles = getAll().map(c => {
+  castles = getAll(false).map(c => {
     c.points = {};
     return c;
   }); // points will contain the roads attached per user
@@ -69,6 +73,6 @@ setInterval(function conquerScheduler() {
     }
   });
   console.log("[castle] Conquer scheduler ran in " + (Date.now() - t1) + "ms");
-}, 5000);
+}, 2000);
 
 module.exports = {create, getAll};
