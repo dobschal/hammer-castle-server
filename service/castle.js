@@ -43,7 +43,7 @@ setInterval(function conquerScheduler() {
   }); // points will contain the roads attached per user
   for (let i = 0; i < castles.length; i++) {
     const c1 = castles[i];
-    for (let j = i; j < castles.length; j++) {
+    for (let j = i + 1; j < castles.length; j++) {
       const c2 = castles[j];
       const distanceInPixel = tool.positionDistance(c1, c2);
       if (distanceInPixel < config.MAX_CASTLE_DISTANCE) { // castles are connected via road...
