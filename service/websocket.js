@@ -7,6 +7,10 @@ const websocket = {
   connections: {}
 };
 
+function broadcast(message, data) {
+  Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit(message, data));
+}
+
 function init(http) {
   if (websocket.io) {
     return websocket;
@@ -53,4 +57,4 @@ function init(http) {
   return websocket;
 }
 
-module.exports = {init, ...websocket};
+module.exports = {init, broadcast, ...websocket};

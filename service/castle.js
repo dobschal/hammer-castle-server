@@ -3,34 +3,18 @@ const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocket");
 
-let castles = [];
-
 function create(castlePosition, user) {
-  const result = db
-      .prepare(`INSERT INTO castle (user_id, x, y)
-                VALUES (?, ?, ?);`)
+  db.prepare(`INSERT INTO castle (user_id, x, y)
+              VALUES (?, ?, ?);`)
       .run(user.id, castlePosition.x, castlePosition.y);
-  console.log("Castle created: ", result);
-  updateCastlePointsAndOwner();
-  return getOne(castlePosition);
+  const castle = getOne(castlePosition);
+  websocket.broadcast("NEW_CASTLE", castle);
+  return castle;
 }
 
-/**
- * @typedef Castle
- * @type {object}
- * @property {number} x
- * @property {number} y
- * @property {number} user_id
- * @property {string} username
- * @property {string} color
- *
- *  @param {boolean} cached - use cached version?
- * @return Castle[]
- */
-function getAll(cached) {
-  if (cached) return castles;
+function getAll() {
   return db.prepare(`
-    SELECT castle.x, castle.y, castle.user_id, user.color, user.username
+    SELECT castle.x as x, castle.y as y, castle.user_id as userId, user.color as color, user.username as username
     FROM castle
            JOIN user ON castle.user_id = user.id;
   `).all();
@@ -38,7 +22,7 @@ function getAll(cached) {
 
 function getOne({x, y}) {
   return db.prepare(`
-    SELECT castle.x, castle.y, castle.user_id, user.color, user.username
+    SELECT castle.x as x, castle.y as y, castle.user_id as userId, user.color as color, user.username as username
     FROM castle
            JOIN user ON castle.user_id = user.id
     WHERE castle.x = ?
@@ -50,7 +34,10 @@ function changeCastlesUser(x, y, newUserId) {
   return db.prepare("UPDATE castle SET user_id=? WHERE x=? AND y=?").run(newUserId, x, y);
 }
 
-function updateCastlePointsAndOwner() {
+/*function updateCastlePointsAndOwner() {
+
+  //  TODO: Refactor this method...
+
   const t1 = Date.now();
   castles = getAll(false).map(c => {
     c.points = {};
@@ -67,6 +54,7 @@ function updateCastlePointsAndOwner() {
       }
     }
   }
+  const castlesToExchange = [];
   castles.forEach(c => {
     let maxPoints = 0;
     let userId = undefined;
@@ -77,15 +65,18 @@ function updateCastlePointsAndOwner() {
       }
     });
     if (userId && userId !== c.user_id) {
-      changeCastlesUser(c.x, c.y, userId);
-      Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit("CASTLE_CONQUER", {
-        x: c.x, y: c.y, userId: userId, username: c.username, color: c.color
-      }));
+      castlesToExchange.push({x: c.x, y: c.y, c, userId});
     }
+  });
+  castlesToExchange.forEach(({x, y, c, userId}) => {
+    changeCastlesUser(c.x, c.y, userId);
+    Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit("CASTLE_CONQUER", {
+      x: c.x, y: c.y, userId: userId, username: c.username, color: c.color
+    }));
   });
   console.log("[castle] Conquer scheduler ran in " + (Date.now() - t1) + "ms");
 }
 
-setInterval(updateCastlePointsAndOwner, 2000);
+setInterval(updateCastlePointsAndOwner, 2000);*/
 
-module.exports = {create, getAll};
+module.exports = {create, getAll, getOne};
