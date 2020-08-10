@@ -17,7 +17,7 @@ router.post("/create", hasUserRole(["USER"]), function(req, res) {
 });
 
 router.get("/", hasUserRole(["USER"]), function(req, res) {
-  res.send(castleService.getAll(true));
+  res.send(castleService.getAll());
 });
 
 module.exports = router;

@@ -4,9 +4,10 @@ const config = require("../config");
 const websocket = require("./websocket");
 
 function create(castlePosition, user) {
-  db.prepare(`INSERT INTO castle (user_id, x, y)
-              VALUES (?, ?, ?);`)
-      .run(user.id, castlePosition.x, castlePosition.y);
+  const points = _getCastlePoints(castlePosition, user.id);
+  db.prepare(`INSERT INTO castle (user_id, x, y, points)
+              VALUES (?, ?, ?, ?);`)
+      .run(user.id, castlePosition.x, castlePosition.y, points);
   const castle = getOne(castlePosition);
   websocket.broadcast("NEW_CASTLE", castle);
   return castle;
@@ -14,7 +15,12 @@ function create(castlePosition, user) {
 
 function getAll() {
   return db.prepare(`
-    SELECT castle.x as x, castle.y as y, castle.user_id as userId, user.color as color, user.username as username
+    SELECT castle.points  as points,
+           castle.x       as x,
+           castle.y       as y,
+           castle.user_id as userId,
+           user.color     as color,
+           user.username  as username
     FROM castle
            JOIN user ON castle.user_id = user.id;
   `).all();
@@ -22,12 +28,32 @@ function getAll() {
 
 function getOne({x, y}) {
   return db.prepare(`
-    SELECT castle.x as x, castle.y as y, castle.user_id as userId, user.color as color, user.username as username
+    SELECT castle.points as points, castle.x as x, castle.y as y, castle.user_id as userId, user.color as color, user.username as username
     FROM castle
            JOIN user ON castle.user_id = user.id
     WHERE castle.x = ?
       AND castle.y = ?;
   `).get(x, y);
+}
+
+function _getCastlePoints(castle, userId) {
+  const castles = db.prepare(`SELECT *
+                              FROM castle
+                              WHERE user_id = ?`).all(userId);
+  let pointsOfNewCastle = 0;
+  castles.forEach(castleFromDb => {
+    const distanceInPixel = tool.positionDistance(castle, castleFromDb);
+    if (distanceInPixel < config.MAX_CASTLE_DISTANCE) {
+      pointsOfNewCastle++;
+      const result = db.prepare(`UPDATE castle
+                                 SET points = points + 1
+                                 WHERE x = ?
+                                   AND y = ?`).run(castleFromDb.x, castleFromDb.y);
+      castleFromDb.points++;
+      websocket.broadcast("UPDATE_CASTLE", castleFromDb);
+    }
+  });
+  return pointsOfNewCastle;
 }
 
 function changeCastlesUser(x, y, newUserId) {
