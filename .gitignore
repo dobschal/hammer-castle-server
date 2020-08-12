@@ -4,3 +4,5 @@
 /.idea/jsLibraryMappings.xml
 /.idea/sqldialects.xml
 /data/data.db
+
+/node_modules
