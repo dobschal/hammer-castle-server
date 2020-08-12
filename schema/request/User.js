@@ -1,7 +1,7 @@
 module.exports = {
   type: "object",
   properties: {
-    username: "string",
-    password: "string"
+    username: {type: "string"},
+    password: {type: "string"}
   }
 };
