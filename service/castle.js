@@ -6,12 +6,22 @@ const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocket");
+const blockAreaService = require("./blockArea");
 const schema = require("../lib/schema");
 
 /**
  * @type {Conquer[]}
  */
 const runningConquers = [];
+
+const castleDtoSqlQuery = `
+    SELECT castle.points  as points,
+       castle.x       as x,
+       castle.y       as y,
+       castle.user_id as userId,
+       user.color     as color,
+       user.username  as username
+`;
 
 /**
  * @param {Position} castlePosition
@@ -23,9 +33,32 @@ function create(castlePosition, user) {
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
         .run(user.id, castlePosition.x, castlePosition.y, points);
-    const castle = getOne(castlePosition);
+    const castlesInDistance = getCastlesInDistance(castlePosition, config.MAX_CASTLE_DISTANCE);
+    const castle = castlesInDistance.find(c => c.x === castlePosition.x && c.y === castlePosition.y);
+    blockAreaService.createBlockArea(castle, castlesInDistance);
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
+}
+
+/**
+ * @param {Position} position
+ * @param {number} maxDistance
+ * @return {CastleDto[]}
+ */
+function getCastlesInDistance(position, maxDistance) {
+    const minX = position.x - maxDistance;
+    const maxX = position.x + maxDistance;
+    const minY = position.y - maxDistance;
+    const maxY = position.y + maxDistance;
+    const sqlQuery = `
+        ${castleDtoSqlQuery}
+        FROM castle
+        JOIN user ON castle.user_id = user.id
+        WHERE castle.x <= ? AND castle.x >= ? AND castle.y <= ? AND castle.y >= ?;
+    `;
+    const result = db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
+    console.log("[castle] Castles close too: ", position);
+    return result;
 }
 
 /**
@@ -33,12 +66,7 @@ function create(castlePosition, user) {
  */
 function getAll() {
     return db.prepare(`
-        SELECT castle.points  as points,
-               castle.x       as x,
-               castle.y       as y,
-               castle.user_id as userId,
-               user.color     as color,
-               user.username  as username
+       ${castleDtoSqlQuery}
         FROM castle
                  JOIN user ON castle.user_id = user.id;
     `).all();
@@ -52,12 +80,7 @@ function getAll() {
  */
 function getOne({x, y}) {
     return db.prepare(`
-        SELECT castle.points  as points,
-               castle.x       as x,
-               castle.y       as y,
-               castle.user_id as userId,
-               user.color     as color,
-               user.username  as username
+        ${castleDtoSqlQuery}
         FROM castle
                  JOIN user ON castle.user_id = user.id
         WHERE castle.x = ?
@@ -78,12 +101,7 @@ function changeCastlesUser(x, y, newUserId) {
 
 function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
     const castles = db.prepare(`
-        SELECT castle.points  as points,
-               castle.x       as x,
-               castle.y       as y,
-               castle.user_id as userId,
-               user.color     as color,
-               user.username  as username
+       ${castleDtoSqlQuery}
         FROM castle
                  JOIN user ON castle.user_id = user.id
         WHERE castle.user_id = ?;
@@ -172,4 +190,4 @@ function _handleCastleConquer(castle, userId) {
 
 setInterval(_detectCastleConquer, 2000);
 
-module.exports = {create, getAll, getOne, changeCastlesUser};
+module.exports = {create, getAll, getCastlesInDistance};
