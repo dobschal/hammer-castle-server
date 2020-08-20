@@ -8,6 +8,7 @@ const config = require("../config");
 const websocket = require("./websocket");
 const blockAreaService = require("./blockArea");
 const schema = require("../lib/schema");
+const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 
 /**
  * @type {Conquer[]}
@@ -29,13 +30,16 @@ const castleDtoSqlQuery = `
  * @return {CastleDto}
  */
 function create(castlePosition, user) {
+    if (blockAreaService.isInsideBlockArea(castlePosition)) {
+        throw new CastleInsideBlockAreaError("Tried to build a castle inside a blocked area.");
+    }
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
         .run(user.id, castlePosition.x, castlePosition.y, points);
     const castlesInDistance = getCastlesInDistance(castlePosition, config.MAX_CASTLE_DISTANCE);
     const castle = castlesInDistance.find(c => c.x === castlePosition.x && c.y === castlePosition.y);
-    blockAreaService.createBlockArea(castle, castlesInDistance);
+    blockAreaService.createRandomBlockArea(castle, castlesInDistance);
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
 }
@@ -56,9 +60,7 @@ function getCastlesInDistance(position, maxDistance) {
         JOIN user ON castle.user_id = user.id
         WHERE castle.x <= ? AND castle.x >= ? AND castle.y <= ? AND castle.y >= ?;
     `;
-    const result = db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
-    console.log("[castle] Castles close too: ", position);
-    return result;
+    return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
 
 /**
