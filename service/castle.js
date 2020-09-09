@@ -43,7 +43,7 @@ function create(castlePosition, user) {
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
         .run(user.id, castlePosition.x, castlePosition.y, points);
-    const castle = castlesInDistance.find(c => c.x === castlePosition.x && c.y === castlePosition.y);
+    const castle = getOne(castlePosition);
     db.prepare(`UPDATE user
                 SET startX=?,
                     startY=?
