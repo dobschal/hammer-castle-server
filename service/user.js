@@ -17,32 +17,46 @@ function getUserFromTokenBody(tokenBody) {
 }
 
 function create({ username, password, color }) {
-  const { amount } = db
-    .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
-    .get(username);
+  const {amount} = db
+      .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
+      .get(username);
   if (amount > 0) throw new ConflictError("Username is already taken.");
   password = security.encrypt(password, process.env.SECRET);
-  const { lastInsertRowid: userId } = db
-    .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
-    .run(username, password, color);
+  const {lastInsertRowid: userId} = db
+      .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
+      .run(username, password, color);
   db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
-    userId
+      userId
   );
   return userId;
 }
 
-function authenticate({ username, password }) {
+/**
+ * @param {number} userId
+ * @param {number} amountOfHammers
+ * @return {User}
+ */
+function giveHammers(userId, amountOfHammers) {
+  db.prepare(`UPDATE user
+              SET hammer = hammer + ?
+              WHERE hammer < ? AND id = ?`).run(amountOfHammers, config.MAX_HAMMERS, userId);
+  return db.prepare(`SELECT *
+                     FROM user
+                     WHERE id = ?`).get(userId);
+}
+
+function authenticate({username, password}) {
   password = security.encrypt(password, process.env.SECRET);
   const user = db
-    .prepare(
-      `
-      SELECT id, username, password,  group_concat(user_role.role) as userRoles
-      FROM user 
-      JOIN user_role on user.id=user_role.user_id 
-      WHERE user.username=? 
-      GROUP BY user.id;
-      `
-    )
+      .prepare(
+            `
+            SELECT id, username, password, group_concat(user_role.role) as userRoles
+            FROM user
+                   JOIN user_role on user.id = user_role.user_id
+            WHERE user.username = ?
+            GROUP BY user.id;
+          `
+      )
     .get(username);
   if (!user) throw new UnauthorisedError("User not found.");
   if (password !== user.password)
@@ -74,5 +88,6 @@ module.exports = {
   authenticate,
   getAllUsers,
   currentUser,
-  getUserFromTokenBody
+  getUserFromTokenBody,
+  giveHammers
 };

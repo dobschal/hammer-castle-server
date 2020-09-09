@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const db = require("./lib/database");
 const cors = require("cors");
+const hammerService = require("./service/hammerService");
 
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
@@ -89,3 +90,8 @@ setInterval(() => {
 http.listen(8082, () => {
   console.log("[app] Listening on *:" + 8082);
 });
+
+// // // // // // // // // // // // // // // // // // // // // // // // //
+
+// Scheduler
+setInterval(hammerService.makeHammers, 10000);
