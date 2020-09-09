@@ -19,6 +19,8 @@ module.exports = {
     timestamp: {type: "string"},
     email: {type: "string"},
     email_verified: {type: "number"},
-    color: {type: "string"}
+    color: {type: "string"},
+    startX: {type: "number"},
+    startY: {type: "number"}
   }
 };

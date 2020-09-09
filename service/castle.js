@@ -9,6 +9,7 @@ const websocket = require("./websocket");
 const blockAreaService = require("./blockArea");
 const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
+const CastleMinDistanceError = require("../error/CastleMinDistanceError");
 
 /**
  * @type {Conquer[]}
@@ -19,6 +20,7 @@ const castleDtoSqlQuery = `
     SELECT castle.points  as points,
        castle.x       as x,
        castle.y       as y,
+       castle.name    as name,
        castle.user_id as userId,
        user.color     as color,
        user.username  as username
@@ -33,14 +35,40 @@ function create(castlePosition, user) {
     if (blockAreaService.isInsideBlockArea(castlePosition)) {
         throw new CastleInsideBlockAreaError("Tried to build a castle inside a blocked area.");
     }
+    const castlesInDistance = getCastlesInDistance(castlePosition, config.MAX_CASTLE_DISTANCE * 2);
+    if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MIN_CASTLE_DISTANCE)) {
+        throw new CastleMinDistanceError();
+    }
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
         .run(user.id, castlePosition.x, castlePosition.y, points);
-    const castlesInDistance = getCastlesInDistance(castlePosition, config.MAX_CASTLE_DISTANCE);
     const castle = castlesInDistance.find(c => c.x === castlePosition.x && c.y === castlePosition.y);
+    db.prepare(`UPDATE user
+                SET startX=?,
+                    startY=?
+                WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.id);
     blockAreaService.createRandomBlockArea(castle, castlesInDistance);
     websocket.broadcast("NEW_CASTLE", castle);
+    return castle;
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {string} name
+ * @param {User} user
+ * @param {CastleDto} castle
+ */
+function changeName({x, y, name}, user) {
+    const result = db.prepare(`UPDATE castle
+                               SET name=?
+                               WHERE x = ?
+                                 AND y = ?
+                                 AND user_id = ?`).run(name, x, y, user.id);
+    const castle = getOne({x, y});
+    console.log("[castle] Changed castle name: ", castle, result);
+    websocket.broadcast("UPDATE_CASTLE", castle);
     return castle;
 }
 
@@ -54,6 +82,17 @@ function getCastlesInDistance(position, maxDistance) {
     const maxX = position.x + maxDistance;
     const minY = position.y - maxDistance;
     const maxY = position.y + maxDistance;
+    return getCastlesFromTo(minX, minY, maxX, maxY);
+}
+
+/**
+ * @param {number} minX
+ * @param {number} minY
+ * @param {number} maxX
+ * @param {number} maxY
+ * @return {CastleDto[]}
+ */
+function getCastlesFromTo(minX, minY, maxX, maxY) {
     const sqlQuery = `
         ${castleDtoSqlQuery}
         FROM castle
@@ -192,4 +231,4 @@ function _handleCastleConquer(castle, userId) {
 
 setInterval(_detectCastleConquer, 2000);
 
-module.exports = {create, getAll, getCastlesInDistance};
+module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName};

@@ -38,10 +38,12 @@ function getOne({x, y}) {
  */
 function createRandomBlockArea(aroundCastle, castlesInDistance) {
 
+    const distanceFromCastle = Math.floor(config.MIN_CASTLE_DISTANCE + config.MAX_CASTLE_DISTANCE / 2);
+
     // Get a random point on a circle around the castle and check if no existing castle is in the way...
     const randomAngle = Math.random() * Math.PI * 2;
-    const x = Math.floor(config.BLOCK_AREA_SIZE * Math.cos(randomAngle) + aroundCastle.x);
-    const y = Math.floor(config.BLOCK_AREA_SIZE * Math.sin(randomAngle) + aroundCastle.y);
+    const x = Math.floor(distanceFromCastle * Math.cos(randomAngle) + aroundCastle.x);
+    const y = Math.floor(distanceFromCastle * Math.sin(randomAngle) + aroundCastle.y);
     console.log("[blockArea] New block area at: ", x, y);
 
     // Is existing castle inside new block area?
@@ -49,10 +51,35 @@ function createRandomBlockArea(aroundCastle, castlesInDistance) {
     if (c) {
         console.log("[blockArea] Castle inside new block area, so skip... ", c);
     } else {
-        const blockArea = createBlockArea({x, y}, "FOREST");
-        console.log("[blockArea] Created new block area!: ", blockArea);
-        return blockArea;
+        const closedBlockAreas = getBlockAreasInDistance({x, y}, config.BLOCK_AREA_SIZE);
+        console.log("[blockArea] Close areas: ", closedBlockAreas);
+        if (closedBlockAreas.length === 0) {
+            const blockArea = createBlockArea({x, y}, "FOREST");
+            console.log("[blockArea] Created new block area!: ", blockArea);
+            return blockArea;
+        }
     }
+}
+
+/**
+ * @param {Position} position
+ * @param {number} maxDistance
+ * @return {BlockAreaDto[]}
+ */
+function getBlockAreasInDistance(position, maxDistance) {
+    const minX = position.x - maxDistance;
+    const maxX = position.x + maxDistance;
+    const minY = position.y - maxDistance;
+    const maxY = position.y + maxDistance;
+    const sqlQuery = `
+        SELECT *
+        FROM block_area
+        WHERE block_area.x <= ?
+          AND block_area.x >= ?
+          AND block_area.y <= ?
+          AND block_area.y >= ?;
+    `;
+    return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
 
 /**

@@ -17,6 +17,7 @@ module.exports = {
         userId: {type: "number"},
         points: {type: "number"},
         color: {type: "string"},
-        username: {type: "string"}
+        username: {type: "string"},
+        name: {type: "string"}
     }
 };

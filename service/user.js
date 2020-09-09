@@ -16,15 +16,15 @@ function getUserFromTokenBody(tokenBody) {
   return db.prepare(`SELECT * FROM user WHERE id=?`).get(tokenBody.id);
 }
 
-function create({ username, password }) {
+function create({ username, password, color }) {
   const { amount } = db
     .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
     .get(username);
   if (amount > 0) throw new ConflictError("Username is already taken.");
   password = security.encrypt(password, process.env.SECRET);
   const { lastInsertRowid: userId } = db
-    .prepare("INSERT INTO user (username, password) VALUES (?, ?)")
-    .run(username, password);
+    .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
+    .run(username, password, color);
   db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
     userId
   );
