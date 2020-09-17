@@ -140,6 +140,22 @@ function changeCastlesUser(x, y, newUserId) {
     return getOne({x, y});
 }
 
+/**
+ * @param {User} user
+ * @return {number}
+ */
+function getNextCastlePrice(user) {
+    const { count } = db.prepare(`SELECT COUNT(*) AS count FROM castle WHERE user_id=?`).get(user.id);
+    return config.CASTLE_PRICE * (count * config.CASTLE_PRICE_ADJUST);
+}
+
+/**
+ * @return {Conquer[]}
+ */
+function getConquers() {
+    return runningConquers;
+}
+
 function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
     const castles = db.prepare(`
        ${castleDtoSqlQuery}
@@ -212,18 +228,22 @@ function _handleCastleConquer(castle, userId) {
         };
         schema.is(newConquer, "dto/ConquerDto");
         runningConquers.push(newConquer);
+        websocket.broadcast("NEW_CONQUER", newConquer);
     } else {
         let runningConquer = runningConquers[index];
         if (runningConquer.userId !== userId) {
             console.log("[castle] Conquerer for castle changed: ", castle.x, castle.y, userId);
             runningConquer.timestamp = Date.now();
             runningConquer.userId = userId;
+            websocket.broadcast("UPDATE_CONQUER", runningConquer);
         } else { // conquer is still active, check if timestamp is old enough for conquer final...
             if (runningConquer.timestamp + config.CONQUER_DELAY <= Date.now()) {
                 console.log("[castle] Castle conquered!: ", castle.x, castle.y, userId);
                 const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId);
                 schema.is(exchangedCastle, "dto/CastleDto");
                 websocket.broadcast("UPDATE_CASTLE", exchangedCastle);
+                websocket.broadcast("DELETE_CONQUER", runningConquer);
+                runningConquers.splice(index, 1);
             }
         }
     }
@@ -231,4 +251,4 @@ function _handleCastleConquer(castle, userId) {
 
 setInterval(_detectCastleConquer, 2000);
 
-module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName};
+module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName, getNextCastlePrice, getConquers};

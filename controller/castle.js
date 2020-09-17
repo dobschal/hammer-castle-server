@@ -40,4 +40,15 @@ router.get("/", hasUserRole(["USER"]), function(req, res) {
   }
 });
 
+router.get("/price", hasUserRole(["USER"]), function (req, res) {
+  const user = userService.currentUser(req);
+  schema.is(user, "entity/User");
+  const price = castleService.getNextCastlePrice(user);
+  res.send({price});
+});
+
+router.get("/conquers", hasUserRole(["USER"]), function (req, res) {
+  res.send(castleService.getConquers());
+});
+
 module.exports = router;
