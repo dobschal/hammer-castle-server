@@ -6,12 +6,20 @@ const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
 
+/**
+ * @return {User}
+ */
 function currentUser(req) {
   const tokenBody = securityService.getTokenBody(req);
   schema.is(tokenBody, "UserTokenBody");
   return getUserFromTokenBody(tokenBody);
 }
 
+
+/**
+ * @param tokenBody
+ * @return {User}
+ */
 function getUserFromTokenBody(tokenBody) {
   return db.prepare(`SELECT * FROM user WHERE id=?`).get(tokenBody.id);
 }

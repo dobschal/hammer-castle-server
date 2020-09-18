@@ -10,6 +10,7 @@ const blockAreaService = require("./blockArea");
 const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 const CastleMinDistanceError = require("../error/CastleMinDistanceError");
+const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 
 /**
  * @type {Conquer[]}
@@ -39,6 +40,11 @@ function create(castlePosition, user) {
     if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MIN_CASTLE_DISTANCE)) {
         throw new CastleMinDistanceError();
     }
+    const price = getNextCastlePrice(user);
+    if (user.hammer < price) {
+        throw new NotEnoughHammerError("You have not enough hammer to build a castle!");
+    }
+    user.hammer = user.hammer - price;
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
@@ -46,9 +52,13 @@ function create(castlePosition, user) {
     const castle = getOne(castlePosition);
     db.prepare(`UPDATE user
                 SET startX=?,
-                    startY=?
-                WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.id);
+                    startY=?,
+                    hammer=?
+                WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.hammer, user.id);
     blockAreaService.createRandomBlockArea(castle, castlesInDistance);
+    if (websocket.connections[user.username]) {
+        websocket.connections[user.username].emit("UPDATE_USER", user);
+    }
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
 }

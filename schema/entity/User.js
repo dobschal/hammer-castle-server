@@ -8,6 +8,9 @@
  * @property {string} email
  * @property {number} email_verified
  * @property {string} color
+ * @property {number} hammer
+ * @property {number} startX
+ * @property {number} startY
  */
 
 module.exports = {
@@ -21,6 +24,7 @@ module.exports = {
     email_verified: {type: "number"},
     color: {type: "string"},
     startX: {type: "number"},
-    startY: {type: "number"}
+    startY: {type: "number"},
+    hammer: {type: "number"}
   }
 };

@@ -5,7 +5,7 @@ const hasUserRole = require("../filter/hasUserRole");
 const castleService = require("../service/castle");
 const userService = require("../service/user");
 
-router.post("/create", hasUserRole(["USER"]), function(req, res) {
+router.post("/create", hasUserRole(["USER"]), function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/CreateCastle");
   const user = userService.currentUser(req);
