@@ -6,6 +6,7 @@ const logger = require("morgan");
 const db = require("./lib/database");
 const cors = require("cors");
 const hammerService = require("./service/hammerService");
+const config = require("./config");
 
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
@@ -89,4 +90,4 @@ http.listen(8082, () => {
 
 // TODO: move all setIntervals to a scheduler script... there are also some setIntervals in services...
 
-setInterval(hammerService.makeHammers, 10000);
+setInterval(hammerService.makeHammers, config.MAKE_HAMMER_INTERVAL);
