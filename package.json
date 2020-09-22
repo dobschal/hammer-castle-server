@@ -2,6 +2,7 @@
   "name": "hammer-castle-server",
   "version": "1.0.0",
   "description": "Nice game called Hammer Castle.",
+  "author": "Sascha Dobschal",
   "private": true,
   "main": "app.js",
   "scripts": {
