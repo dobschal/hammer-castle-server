@@ -1,8 +1,2 @@
-/.idea/.gitignore
-/.idea/dataSources.xml
-/.idea/inspectionProfiles
-/.idea/jsLibraryMappings.xml
-/.idea/sqldialects.xml
 /data/data.db
-
 /node_modules
