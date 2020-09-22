@@ -4,7 +4,7 @@ const { version } = require("../package.json");
 
 router.get("/version", function(req, res, next) {
   console.log("Version: ", version);
-  res.send({ version });
+  res.send({ version, hey: "yeah!" });
 });
 
 module.exports = router;
