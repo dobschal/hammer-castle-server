@@ -5,6 +5,7 @@ const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
+const castleService = require("./castle");
 
 /**
  * @return {User}
@@ -45,33 +46,34 @@ function create({ username, password, color }) {
  * @return {User}
  */
 function giveHammers(userId, amountOfHammers) {
-  db.prepare(`UPDATE user
-              SET hammer = hammer + ?
-              WHERE hammer < ? AND id = ?`).run(amountOfHammers, config.MAX_HAMMERS, userId);
-  return db.prepare(`SELECT *
-                     FROM user
-                     WHERE id = ?`).get(userId);
+    db.prepare(`UPDATE user
+                SET hammer = hammer + ?
+                WHERE hammer < ?
+                  AND id = ?`).run(amountOfHammers, config.MAX_HAMMERS, userId);
+    return db.prepare(`SELECT *
+                       FROM user
+                       WHERE id = ?`).get(userId);
 }
 
 function authenticate({username, password}) {
-  password = security.encrypt(password, process.env.SECRET);
-  const user = db
-      .prepare(
+    password = security.encrypt(password, process.env.SECRET);
+    const user = db
+        .prepare(
+                `
+                    SELECT id, username, password, group_concat(user_role.role) as userRoles
+                    FROM user
+                             JOIN user_role on user.id = user_role.user_id
+                    WHERE user.username = ?
+                    GROUP BY user.id;
             `
-            SELECT id, username, password, group_concat(user_role.role) as userRoles
-            FROM user
-                   JOIN user_role on user.id = user_role.user_id
-            WHERE user.username = ?
-            GROUP BY user.id;
-          `
-      )
-    .get(username);
-  if (!user) throw new UnauthorisedError("User not found.");
-  if (password !== user.password)
-    throw new UnauthorisedError("Wrong credentials.");
-  delete user.password;
-  const userTokenBody = {
-    expires: Date.now() + config.TOKEN_EXPIRATION,
+        )
+        .get(username);
+    if (!user) throw new UnauthorisedError("User not found.");
+    if (password !== user.password)
+        throw new UnauthorisedError("Wrong credentials.");
+    delete user.password;
+    const userTokenBody = {
+        expires: Date.now() + config.TOKEN_EXPIRATION,
     ...user
   };
   schema.is(userTokenBody, "UserTokenBody");
@@ -92,10 +94,10 @@ function getAllUsers() {
 }
 
 module.exports = {
-  create,
-  authenticate,
-  getAllUsers,
-  currentUser,
-  getUserFromTokenBody,
-  giveHammers
+    create,
+    authenticate,
+    getAllUsers,
+    currentUser,
+    getUserFromTokenBody,
+    giveHammers
 };

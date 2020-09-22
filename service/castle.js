@@ -124,6 +124,18 @@ function getAll() {
 }
 
 /**
+ * @param {User} user
+ * @return {CastleDto[]}
+ */
+function getAllOfUser(user) {
+    return db.prepare(`
+       ${castleDtoSqlQuery}
+        FROM castle
+                 JOIN user ON castle.user_id = user.id WHERE castle.user_id=?;
+    `).all(user.id);
+}
+
+/**
  *
  * @param {number} x
  * @param {number} y
@@ -151,12 +163,20 @@ function changeCastlesUser(x, y, newUserId) {
 }
 
 /**
+ * The idea is to allow a user to build a castle every 15 minutes.
+ * Hammers are given all 10 seconds. The price per castle raises, but the production of the hammers too.
+ * So the relation between the price of a castle and the amount of hammers gifted remains constant.
  * @param {User} user
  * @return {number}
  */
 function getNextCastlePrice(user) {
-    const { count } = db.prepare(`SELECT COUNT(*) AS count FROM castle WHERE user_id=?`).get(user.id);
-    return config.CASTLE_PRICE * (count * config.CASTLE_PRICE_ADJUST);
+
+    // FIXME: if the make hammer interval changes, the formula below will be wrong...
+
+    const {count} = db.prepare(`SELECT COUNT(*) AS count
+                                FROM castle
+                                WHERE user_id = ?`).get(user.id);
+    return Math.min(count - 1, 4) * count * 90;
 }
 
 /**
@@ -261,4 +281,4 @@ function _handleCastleConquer(castle, userId) {
 
 setInterval(_detectCastleConquer, 2000);
 
-module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName, getNextCastlePrice, getConquers};
+module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName, getNextCastlePrice, getConquers, getAllOfUser};
