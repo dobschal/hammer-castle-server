@@ -36,12 +36,12 @@ let files = fs.readdirSync(controllerDirPath);
 files.forEach(function (filename) {
   console.log("[app] Load controller: ", filename);
   app.use(
-      `/${filename.replace(fileExtension, "").replace("index", "")}`,
+      `/api/${filename.replace(fileExtension, "").replace("/index", "")}`,
       require(path.join(controllerDirPath, filename))
   );
 
   //  Error handler
-  app.use(`/${filename.replace(fileExtension, "").replace("index", "")}`, function (err, req, res, next) {
+  app.use(`/api/${filename.replace(fileExtension, "").replace("/index", "")}`, function (err, req, res, next) {
     console.log("[app] Error response: ", err);
     res.status(err.status || 500).send({
       message: err.message || "An unhandled error occurred.",
