@@ -10,13 +10,7 @@ router.get("/", hasUserRole(["ADMIN"]), function(req, res) {
 });
 
 router.get("/current", hasUserRole(["USER"]), function(req, res) {
-
-  // FIXME: If the make hammer interval changes, the calculation is wrong here...
-
   const user = userService.currentUser(req);
-  const castles = castleService.getAllOfUser(user);
-  user.level = castles.reduce((prev, curr) => prev + curr.points, 0);
-  user.hammerPerMinute = user.level * 6;
   delete user.password;
   delete user.email_verified;
   res.send(user);

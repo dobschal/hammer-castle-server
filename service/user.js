@@ -5,7 +5,6 @@ const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
-const castleService = require("./castle");
 
 /**
  * @return {User}
@@ -26,18 +25,42 @@ function getUserFromTokenBody(tokenBody) {
 }
 
 function create({ username, password, color }) {
-  const {amount} = db
-      .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
-      .get(username);
-  if (amount > 0) throw new ConflictError("Username is already taken.");
-  password = security.encrypt(password, process.env.SECRET);
-  const {lastInsertRowid: userId} = db
-      .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
-      .run(username, password, color);
-  db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
-      userId
-  );
-  return userId;
+    const {amount} = db
+        .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
+        .get(username);
+    if (amount > 0) throw new ConflictError("Username is already taken.");
+    password = security.encrypt(password, process.env.SECRET);
+    const {lastInsertRowid: userId} = db
+        .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
+        .run(username, password, color);
+    db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
+        userId
+    );
+    return userId;
+}
+
+/**
+ * @param {User} user
+ * @return {User} - updated one
+ */
+function updateUserLevel(user, castles) {
+    const level = castles.reduce((prev, curr) => prev + curr.points, 0);
+    const hammerPerMinute = level * 6;
+    db.prepare(`UPDATE user
+                SET hammer_per_minute = ?,
+                    level             = ?
+                WHERE id = ?`).run(hammerPerMinute, level, user.id);
+    return getById(user.id)
+}
+
+/**
+ * @param {number} userId
+ * @return {User}
+ */
+function getById(userId) {
+    return db.prepare(`SELECT *
+                       FROM user
+                       WHERE id = ?`).get(userId)
 }
 
 /**
@@ -94,10 +117,12 @@ function getAllUsers() {
 }
 
 module.exports = {
+    getById,
     create,
     authenticate,
     getAllUsers,
     currentUser,
     getUserFromTokenBody,
-    giveHammers
+    giveHammers,
+    updateUserLevel
 };

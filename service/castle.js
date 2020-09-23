@@ -11,6 +11,7 @@ const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 const CastleMinDistanceError = require("../error/CastleMinDistanceError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+const userService = require("./user");
 
 /**
  * @type {Conquer[]}
@@ -56,15 +57,9 @@ function create(castlePosition, user) {
                     hammer=?
                 WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.hammer, user.id);
     blockAreaService.createRandomBlockArea(castle, castlesInDistance);
+    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
     if (websocket.connections[user.username]) {
-        const castles = getAllOfUser(user);
-        const level = castles.reduce((prev, curr) => prev + curr.points, 0);
-        const hammerPerMinute = level * 6;
-        websocket.connections[user.username].emit("UPDATE_USER", {
-            hammer: user.hammer,
-            hammerPerMinute,
-            level
-        });
+        websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
@@ -302,8 +297,19 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
         } else { // conquer is still active, check if timestamp is old enough for conquer final...
             if (runningConquer.timestamp + config.CONQUER_DELAY <= Date.now()) {
                 console.log("[castle] Castle conquered!: ", castle.x, castle.y, userId);
+                const involvedUsers = [castle.userId, userId];
+
                 const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId, newPointsOfCastle);
                 schema.is(exchangedCastle, "dto/CastleDto");
+
+                involvedUsers.forEach((userId) => {
+                    const user = userService.getById(userId);
+                    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
+                    if (websocket.connections[user.username]) {
+                        websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
+                    }
+                });
+
                 websocket.broadcast("UPDATE_CASTLE", exchangedCastle);
                 websocket.broadcast("DELETE_CONQUER", runningConquer);
                 runningConquers.splice(index, 1);

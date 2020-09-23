@@ -11,6 +11,8 @@
  * @property {number} hammer
  * @property {number} startX
  * @property {number} startY
+ * @property {number} hammer_per_minute
+ * @property {number} level
  */
 
 module.exports = {
@@ -25,6 +27,8 @@ module.exports = {
     color: {type: "string"},
     startX: {type: "number"},
     startY: {type: "number"},
-    hammer: {type: "number"}
+    hammer: {type: "number"},
+    hammer_per_minute: {type: "number"},
+    level: {type: "number"}
   }
 };
