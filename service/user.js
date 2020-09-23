@@ -46,10 +46,10 @@ function create({ username, password, color }) {
  * @return {User}
  */
 function giveHammers(userId, amountOfHammers) {
+    const {hammer} = db.prepare("SELECT hammer FROM user WHERE id=?").get(userId);
     db.prepare(`UPDATE user
-                SET hammer = hammer + ?
-                WHERE hammer < ?
-                  AND id = ?`).run(amountOfHammers, config.MAX_HAMMERS, userId);
+                SET hammer = ?
+                WHERE id = ?`).run(Math.min(hammer + amountOfHammers, config.MAX_HAMMERS), userId);
     return db.prepare(`SELECT *
                        FROM user
                        WHERE id = ?`).get(userId);
