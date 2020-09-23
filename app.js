@@ -74,7 +74,7 @@ const {connections} = require("./service/websocket").init(http);
 setInterval(() => {
   console.log("[app] Websocket connections: ", Object.keys(connections).length);
   Object.keys(connections).forEach(username => {
-    connections[username].emit("HEARTBEAT", {yeah: "Yeah " + username + "!"});
+    connections[username].emit("HEARTBEAT", {username});
   });
 }, 3000);
 
