@@ -18,6 +18,7 @@ function init(http) {
 
   //    Initialize socket.io and allow CORS
   websocket.io = require("socket.io")(http, {
+    path: "/api/ws",
     handlePreflightRequest: (req, res) => {
       const headers = {
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
