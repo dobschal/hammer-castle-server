@@ -44,7 +44,7 @@ function create(castlePosition, user) {
     if (user.hammer < price) {
         throw new NotEnoughHammerError("You have not enough hammer to build a castle!");
     }
-    user.hammer = user.hammer - price;
+    user.hammer = (user.hammer - price) || 0;
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     db.prepare(`INSERT INTO castle (user_id, x, y, points)
                 VALUES (?, ?, ?, ?);`)
@@ -57,7 +57,14 @@ function create(castlePosition, user) {
                 WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.hammer, user.id);
     blockAreaService.createRandomBlockArea(castle, castlesInDistance);
     if (websocket.connections[user.username]) {
-        websocket.connections[user.username].emit("UPDATE_USER", user);
+        const castles = getAllOfUser(user);
+        const level = castles.reduce((prev, curr) => prev + curr.points, 0);
+        const hammerPerMinute = level * 6;
+        websocket.connections[user.username].emit("UPDATE_USER", {
+            hammer: user.hammer,
+            hammerPerMinute,
+            level
+        });
     }
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
