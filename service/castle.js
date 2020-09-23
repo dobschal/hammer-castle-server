@@ -155,10 +155,11 @@ function getOne({x, y}) {
  * @param {number} x
  * @param {number} y
  * @param {number} newUserId
+ * @param {number} newPointsOfCastle
  * @return {CastleDto}
  */
-function changeCastlesUser(x, y, newUserId) {
-    db.prepare("UPDATE castle SET user_id=? WHERE x=? AND y=?").run(newUserId, x, y);
+function changeCastlesUser(x, y, newUserId, newPointsOfCastle) {
+    db.prepare("UPDATE castle SET user_id=?, points=? WHERE x=? AND y=?").run(newUserId, newPointsOfCastle, x, y);
     return getOne({x, y});
 }
 
@@ -209,7 +210,20 @@ function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
     return pointsOfNewCastle;
 }
 
-function _detectCastleConquer() {
+function castlePointsCleanUp() {
+    const t1 = Date.now();
+    const castles = _getAllCastlesWithUserPoints();
+    castles.forEach(c => {
+       if(c.pointsPerUser[c.userId] !== c.points) {
+           db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId], c.x, c.y);
+           console.log("[castle] Updated castles points, were not correct: ", c);
+       }
+    });
+    console.log("[castle] Cleaned up castles in " + (Date.now() - t1) + "ms.");
+}
+
+function detectCastleConquer() {
+    const t1 = Date.now();
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
         let maxPoints = 0;
@@ -221,10 +235,22 @@ function _detectCastleConquer() {
             }
         });
         if (userId && userId !== c.userId) {
+            const newPoints = c.pointsPerUser[userId];
             delete c.pointsPerUser; // clean up
-            _handleCastleConquer(c, userId);
+            _handleCastleConquer(c, userId, newPoints);
         }
     });
+
+    // Clean up...
+    for(let i = runningConquers.length - 1; i > 0; i--) {
+        const runningConquer = runningConquers[i];
+        if(runningConquer.timestamp + config.CONQUER_DELAY < Date.now()) {
+            runningConquers.splice(index, 1);
+            websocket.broadcast("DELETE_CONQUER", runningConquer);
+        }
+    }
+
+    console.log("[castle] Handled conquers in " + (Date.now() - t1) + "ms.");
 }
 
 function _getAllCastlesWithUserPoints() {
@@ -247,7 +273,7 @@ function _getAllCastlesWithUserPoints() {
     return castles;
 }
 
-function _handleCastleConquer(castle, userId) {
+function _handleCastleConquer(castle, userId, newPointsOfCastle) {
     const index = runningConquers.findIndex(rc => rc.castle.x === castle.x && rc.castle.y === castle.y);
     if (index === -1) {
         console.log("[castle] New conquer started: ", castle.x, castle.y, userId);
@@ -269,7 +295,7 @@ function _handleCastleConquer(castle, userId) {
         } else { // conquer is still active, check if timestamp is old enough for conquer final...
             if (runningConquer.timestamp + config.CONQUER_DELAY <= Date.now()) {
                 console.log("[castle] Castle conquered!: ", castle.x, castle.y, userId);
-                const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId);
+                const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId, newPointsOfCastle);
                 schema.is(exchangedCastle, "dto/CastleDto");
                 websocket.broadcast("UPDATE_CASTLE", exchangedCastle);
                 websocket.broadcast("DELETE_CONQUER", runningConquer);
@@ -279,6 +305,16 @@ function _handleCastleConquer(castle, userId) {
     }
 }
 
-setInterval(_detectCastleConquer, 2000);
 
-module.exports = {create, getAll, getCastlesInDistance, getCastlesFromTo, changeName, getNextCastlePrice, getConquers, getAllOfUser};
+module.exports = {
+    create,
+    getAll,
+    getCastlesInDistance,
+    getCastlesFromTo,
+    changeName,
+    getNextCastlePrice,
+    getConquers,
+    getAllOfUser,
+    castlePointsCleanUp,
+    detectCastleConquer
+};
