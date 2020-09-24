@@ -41,6 +41,7 @@ function create({ username, password, color }) {
 
 /**
  * @param {User} user
+ * @param {CastleDto[]} castles
  * @return {User} - updated one
  */
 function updateUserLevel(user, castles) {

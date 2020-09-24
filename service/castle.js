@@ -11,6 +11,8 @@ const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 const CastleMinDistanceError = require("../error/CastleMinDistanceError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+const CastleNotFoundError = require("../error/CastleNotFoundError");
+const PermissionError = require("../error/PermissionError");
 const userService = require("./user");
 
 /**
@@ -63,6 +65,28 @@ function create(castlePosition, user) {
     }
     websocket.broadcast("NEW_CASTLE", castle);
     return castle;
+}
+
+/**
+ * @param {Position} castlePosition
+ * @param {User} user
+ * @return {CastleDto}
+ */
+function deleteCastle(castlePosition, user) {
+    const castleToDelete = getOne(castlePosition);
+    if (!castleToDelete) {
+        throw new CastleNotFoundError("The castle you try to delete, does not exist.");
+    }
+    if (user.id !== castleToDelete.userId) {
+        throw new PermissionError("You cannot destroy a castle, you don't own...");
+    }
+    _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
+    db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
+    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
+    if (websocket.connections[user.username]) {
+        websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
+    }
+    websocket.broadcast("DELETE_CASTLE", castlePosition);
 }
 
 /**
@@ -129,6 +153,14 @@ function getAll() {
  * @param {User} user
  * @return {CastleDto[]}
  */
+function getAllOfUserId(userId) {
+    return db.prepare(`
+       ${castleDtoSqlQuery}
+        FROM castle
+                 JOIN user ON castle.user_id = user.id WHERE castle.user_id=?;
+    `).all(userId);
+}
+
 function getAllOfUser(user) {
     return db.prepare(`
        ${castleDtoSqlQuery}
@@ -190,16 +222,11 @@ function getConquers() {
 }
 
 function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
-    const castles = db.prepare(`
-       ${castleDtoSqlQuery}
-        FROM castle
-                 JOIN user ON castle.user_id = user.id
-        WHERE castle.user_id = ?;
-    `).all(userId);
+    const castles = getAllOfUserId(userId);
     let pointsOfNewCastle = 0;
     castles.forEach(castleFromDb => {
         const distanceInPixel = tool.positionDistance(newCastlePosition, castleFromDb);
-        if (distanceInPixel < config.MAX_CASTLE_DISTANCE) {
+        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
             pointsOfNewCastle++;
             const result = db.prepare(`UPDATE castle
                                        SET points = points + 1
@@ -212,14 +239,29 @@ function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
     return pointsOfNewCastle;
 }
 
+function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId) {
+    const castles = getAllOfUserId(userId);
+    castles.forEach(castleFromDb => {
+        const distanceInPixel = tool.positionDistance(destroyedCastlePosition, castleFromDb);
+        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
+            const result = db.prepare(`UPDATE castle
+                                       SET points = points - 1
+                                       WHERE x = ?
+                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
+            castleFromDb.points++;
+            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
+        }
+    });
+}
+
 function castlePointsCleanUp() {
     const t1 = Date.now();
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
-       if(c.pointsPerUser[c.userId] !== c.points) {
-           db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId], c.x, c.y);
-           console.log("[castle] Updated castles points, were not correct: ", c);
-       }
+        if (c.pointsPerUser[c.userId] !== c.points) {
+            db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId], c.x, c.y);
+            console.log("[castle] Updated castles points, were not correct: ", c);
+        }
     });
     console.log("[castle] Cleaned up castles in " + (Date.now() - t1) + "ms.");
 }
@@ -321,6 +363,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
 
 module.exports = {
     create,
+    deleteCastle,
     getAll,
     getCastlesInDistance,
     getCastlesFromTo,

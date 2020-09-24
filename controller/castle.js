@@ -16,7 +16,21 @@ router.post("/create", hasUserRole(["USER"]), function (req, res) {
   });
 });
 
-router.post("/change-name", hasUserRole(["USER"]), function(req, res) {
+router.delete("/", hasUserRole(["USER"]), function (req, res) {
+  const requestBody = {
+    x: Number(req.query.x),
+    y: Number(req.query.y)
+  };
+  schema.is(requestBody, "request/DeleteCastle");
+  const user = userService.currentUser(req);
+  schema.is(user, "entity/User");
+  res.send({
+    success: true,
+    castle: castleService.deleteCastle(requestBody, user)
+  });
+});
+
+router.post("/change-name", hasUserRole(["USER"]), function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/ChangeCastleName");
   const user = userService.currentUser(req);
