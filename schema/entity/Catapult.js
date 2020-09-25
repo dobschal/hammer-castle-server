@@ -10,6 +10,8 @@
  * @property {number} user_id
  * @property {number} lifetime
  * @property {string} timestamp
+ * @property {string} color
+ * @property {string} username
  */
 
 module.exports = {
@@ -23,6 +25,8 @@ module.exports = {
         user_castle_y: {type: "number"},
         user_id: {type: "number"},
         lifetime: {type: "number"},
-        timestamp: {type: "string"}
+        timestamp: {type: "string"},
+        color: {type: "string"},
+        username: {type: "string"}
     }
 };

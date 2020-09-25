@@ -3,6 +3,7 @@ const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocket");
 const castleService = require("./castle");
+const userService = require("./user");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
@@ -16,6 +17,7 @@ const selectQuery = `catapult.x,
                catapult.user_castle_y,
                catapult.timestamp,
                catapult.lifetime,
+               catapult.user_id,
                user.color,
                user.username`;
 
@@ -58,14 +60,14 @@ function create(catapultRequestBody, user) {
  * @return {Catapult}
  */
 function getByPosition({x, y}) {
-    return db.prepare(`SELECT ${selectQuery} FROM catapult WHERE x=? AND y=?;`).get(x, y);
+    return db.prepare(`SELECT ${selectQuery} FROM catapult JOIN user ON catapult.user_id = user.id WHERE x=? AND y=?;`).get(x, y);
 }
 
 /**
  * @return {Catapult[]}
  */
 function getAll() {
-    return db.prepare(`SELECT ${selectQuery} FROM catapult;`).all();
+    return db.prepare(`SELECT ${selectQuery} FROM catapult JOIN user ON catapult.user_id = user.id;`).all();
 }
 
 /**
@@ -88,4 +90,22 @@ function getCatapultsFromTo(minX, minY, maxX, maxY) {
     return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
 
-module.exports = {create, getByPosition, getAll, getCatapultsFromTo};
+function triggerCatapultAttacks() {
+    getAll().forEach(c => {
+        const attacksAt = tool.dateFromDbTimestamp(c.timestamp);
+        if (attacksAt.getTime() + c.lifetime < Date.now()) {
+            console.log("[catapultService] Catapult is going to attack: ", c);
+            const opponentsCastle = castleService.getByPosition({x: c.opponent_castle_x, y: c.opponent_castle_y});
+            const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(c.x, c.y, c.user_id);
+            websocket.broadcast("DELETE_CATAPULT", c);
+            if (opponentsCastle && opponentsCastle.userId !== c.user_id) { // is still not my castle? --> no friendly shooting
+                if (Math.random() >= 0.5) { // Throw the dice...
+                    const opponentUser = userService.getById(opponentsCastle.userId);
+                    castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
+                }
+            }
+        }
+    });
+}
+
+module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks};
