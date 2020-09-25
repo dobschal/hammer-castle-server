@@ -221,37 +221,12 @@ function getConquers() {
     return runningConquers;
 }
 
-function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
-    const castles = getAllOfUserId(userId);
-    let pointsOfNewCastle = 0;
-    castles.forEach(castleFromDb => {
-        const distanceInPixel = tool.positionDistance(newCastlePosition, castleFromDb);
-        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
-            pointsOfNewCastle++;
-            const result = db.prepare(`UPDATE castle
-                                       SET points = points + 1
-                                       WHERE x = ?
-                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
-            castleFromDb.points++;
-            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
-        }
-    });
-    return pointsOfNewCastle;
-}
-
-function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId) {
-    const castles = getAllOfUserId(userId);
-    castles.forEach(castleFromDb => {
-        const distanceInPixel = tool.positionDistance(destroyedCastlePosition, castleFromDb);
-        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
-            const result = db.prepare(`UPDATE castle
-                                       SET points = points - 1
-                                       WHERE x = ?
-                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
-            castleFromDb.points++;
-            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
-        }
-    });
+/**
+ * @param {Position} position
+ * @return {CastleDto}
+ */
+function getByPosition(position) {
+    return getOne(position);
 }
 
 function castlePointsCleanUp() {
@@ -286,15 +261,50 @@ function detectCastleConquer() {
     });
 
     // Clean up...
-    for(let i = runningConquers.length - 1; i > 0; i--) {
+    for (let i = runningConquers.length - 1; i > 0; i--) {
         const runningConquer = runningConquers[i];
-        if(runningConquer.timestamp + config.CONQUER_DELAY < Date.now()) {
+        if (runningConquer.timestamp + config.CONQUER_DELAY < Date.now()) {
             runningConquers.splice(index, 1);
             websocket.broadcast("DELETE_CONQUER", runningConquer);
         }
     }
 
     console.log("[castle] Handled conquers in " + (Date.now() - t1) + "ms.");
+}
+
+/* * * * * * * * * * * * * * * * * * *  PRIVATE * * * * * * * * * * * * * * * * * * */
+
+function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
+    const castles = getAllOfUserId(userId);
+    let pointsOfNewCastle = 0;
+    castles.forEach(castleFromDb => {
+        const distanceInPixel = tool.positionDistance(newCastlePosition, castleFromDb);
+        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
+            pointsOfNewCastle++;
+            const result = db.prepare(`UPDATE castle
+                                       SET points = points + 1
+                                       WHERE x = ?
+                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
+            castleFromDb.points++;
+            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
+        }
+    });
+    return pointsOfNewCastle;
+}
+
+function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId) {
+    const castles = getAllOfUserId(userId);
+    castles.forEach(castleFromDb => {
+        const distanceInPixel = tool.positionDistance(destroyedCastlePosition, castleFromDb);
+        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
+            const result = db.prepare(`UPDATE castle
+                                       SET points = points - 1
+                                       WHERE x = ?
+                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
+            castleFromDb.points++;
+            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
+        }
+    });
 }
 
 function _getAllCastlesWithUserPoints() {
@@ -372,5 +382,6 @@ module.exports = {
     getConquers,
     getAllOfUser,
     castlePointsCleanUp,
-    detectCastleConquer
+    detectCastleConquer,
+    getByPosition
 };
