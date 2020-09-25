@@ -5,18 +5,26 @@ const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const castleService = require("../service/castle");
 
-router.get("/", hasUserRole(["ADMIN"]), function(req, res) {
+router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
   res.send(userService.getAllUsers());
 });
 
-router.get("/current", hasUserRole(["USER"]), function(req, res) {
+router.get("/ranking", hasUserRole(["USER"]), function (req, res) {
+  res.send(userService.getRanking());
+});
+
+router.get("/is-online", hasUserRole(["USER"]), function (req, res) {
+  res.send({isOnline: userService.isOnline(req.query.username)});
+});
+
+router.get("/current", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
   delete user.password;
   delete user.email_verified;
   res.send(user);
 });
 
-router.post("/register", function(req, res) {
+router.post("/register", function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
   userService.create(requestBody);

@@ -5,6 +5,7 @@ const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
+const websocketService = require("./websocket");
 
 /**
  * @return {User}
@@ -106,15 +107,30 @@ function authenticate({username, password}) {
 }
 
 function getAllUsers() {
-  const users = db
-    .prepare(
-      `SELECT user.id, user.username, user.timestamp as registeredAt, group_concat(user_role.role) as userRoles 
-  FROM user 
-  JOIN user_role on user.id=user_role.user_id 
-  GROUP BY user.id;`
-    )
-    .all();
-  return users;
+    const users = db
+        .prepare(
+                `SELECT user.id,
+                        user.username,
+                        user.timestamp as registeredAt,
+                        group_concat(user_role.role) as userRoles
+                 FROM user
+                          JOIN user_role on user.id = user_role.user_id
+                 GROUP BY user.id;`
+        )
+        .all();
+    return users;
+}
+
+function getRanking() {
+    return db.prepare("SELECT username, level, id FROM user ORDER BY level DESC;").all();
+}
+
+/**
+ * @param {string} username
+ * @return {boolean}
+ */
+function isOnline(username) {
+    return Boolean(websocketService.connections[username]);
 }
 
 module.exports = {
@@ -125,5 +141,7 @@ module.exports = {
     currentUser,
     getUserFromTokenBody,
     giveHammers,
-    updateUserLevel
+    updateUserLevel,
+    getRanking,
+    isOnline
 };
