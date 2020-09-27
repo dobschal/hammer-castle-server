@@ -94,7 +94,7 @@ function triggerCatapultAttacks() {
     getAll().forEach(c => {
         const attacksAt = tool.dateFromDbTimestamp(c.timestamp);
         if (attacksAt.getTime() + c.lifetime < Date.now()) {
-            console.log("[catapultService] Catapult is going to attack: ", c);
+            console.log("[catapultService] Catapult is going to attack.");
             const opponentsCastle = castleService.getByPosition({x: c.opponent_castle_x, y: c.opponent_castle_y});
             const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(c.x, c.y, c.user_id);
             websocket.broadcast("DELETE_CATAPULT", c);

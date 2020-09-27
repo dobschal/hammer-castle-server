@@ -59,7 +59,7 @@ function create(castlePosition, user) {
                     hammer=?
                 WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.hammer, user.id);
     blockAreaService.createRandomBlockArea(castle, castlesInDistance);
-    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
+    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
@@ -82,7 +82,7 @@ function deleteCastle(castlePosition, user) {
     }
     _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
     db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
-    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
+    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
@@ -150,7 +150,7 @@ function getAll() {
 }
 
 /**
- * @param {User} user
+ * @param {number} userId
  * @return {CastleDto[]}
  */
 function getAllOfUserId(userId) {
@@ -161,6 +161,10 @@ function getAllOfUserId(userId) {
     `).all(userId);
 }
 
+/**
+ * @param {User} user
+ * @return {CastleDto[]}
+ */
 function getAllOfUser(user) {
     return db.prepare(`
        ${castleDtoSqlQuery}
@@ -197,21 +201,20 @@ function changeCastlesUser(x, y, newUserId, newPointsOfCastle) {
     return getOne({x, y});
 }
 
+const priceMultiplier = config.BASE_TIMER * (60000 / config.MAKE_HAMMER_INTERVAL);
+
 /**
  * The idea is to allow a user to build a castle every 15 minutes.
- * Hammers are given all 10 seconds. The price per castle raises, but the production of the hammers too.
+ * Hammers are given all X seconds. The price per castle raises, but the production of the hammers too.
  * So the relation between the price of a castle and the amount of hammers gifted remains constant.
  * @param {User} user
  * @return {number}
  */
 function getNextCastlePrice(user) {
-
-    // FIXME: if the make hammer interval changes, the formula below will be wrong...
-
     const {count} = db.prepare(`SELECT COUNT(*) AS count
                                 FROM castle
                                 WHERE user_id = ?`).get(user.id);
-    return Math.min(count - 1, 4) * count * 90;
+    return Math.min(count - 1, config.AVERAGE_ROADS_PER_CASTLE) * count * priceMultiplier;
 }
 
 /**
@@ -356,7 +359,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
 
                 involvedUsers.forEach((userId) => {
                     const user = userService.getById(userId);
-                    const updatedUser = userService.updateUserLevel(user, getAllOfUser(user));
+                    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
                     if (websocket.connections[user.username]) {
                         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
                     }

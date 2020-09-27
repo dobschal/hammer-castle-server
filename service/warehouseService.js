@@ -1,12 +1,10 @@
 const db = require("../lib/database");
-const tool = require("../lib/tool");
-const config = require("../config");
 const websocket = require("./websocket");
 const castleService = require("./castle");
+const hammerService = require("./hammerService");
 const userService = require("./user");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
-const WrongPositionError = require("../error/WrongPositionError");
 const ConflictError = require("../error/ConflictError");
 
 const selectQuery = `warehouse.x,
@@ -46,6 +44,10 @@ function create(warehouseRequestBody, user) {
     db.prepare("INSERT INTO warehouse (x, y, castle_1_x, castle_1_y, castle_2_x, castle_2_y, user_id) VALUES (?,?,?,?,?,?,?);")
         .run(x, y, castle1X, castle1Y, castle2X, castle2Y, user.id);
     const warehouse = getByPosition({x, y});
+    const updatedUser = userService.updateUserValues(user, undefined, getAllOfUser(user));
+    if (websocket.connections[user.username]) {
+        websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
+    }
     websocket.broadcast("NEW_WAREHOUSE", warehouse);
     return warehouse;
 }
@@ -86,4 +88,57 @@ function getWarehousesFromTo(minX, minY, maxX, maxY) {
     return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
 
-module.exports = {create, getByPosition, getAll, getWarehousesFromTo};
+/**
+ * @param {Warehouse} w
+ */
+function deleteWarehouse(w) {
+    const result = db.prepare("DELETE FROM warehouse WHERE x=? AND y=?").run(w.x, w.y);
+    websocket.broadcast("DELETE_WAREHOUSE", w);
+}
+
+/**
+ * @param {User} user
+ * @return {Warehouse[]}
+ */
+function getAllOfUser(user) {
+    return db.prepare(`
+       SELECT ${selectQuery}
+        FROM warehouse
+                 JOIN user ON warehouse.user_id = user.id WHERE warehouse.user_id=?;
+    `).all(user.id);
+}
+
+/**
+ * A warehouse is located on a road connecting two castles of one player.
+ * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
+ */
+function cleanUp() {
+    getAll().forEach(w => {
+        const castle1 = castleService.getByPosition({
+            x: w.castle_1_x,
+            y: w.castle_1_y
+        });
+        const castle2 = castleService.getByPosition({
+            x: w.castle_2_x,
+            y: w.castle_2_y
+        });
+        let remove = false;
+        if (!castle1 || !castle2) {
+            console.log("[warehouseService] Destroy warehouse, close castle was destroyed.");
+            remove = true;
+        } else if (w.user_id !== castle1.userId || w.user_id !== castle2.userId) {
+            console.log("[warehouseService] Destroy warehouse, user is not owning close castle anymore.");
+            remove = true;
+        }
+        if (remove) {
+            deleteWarehouse(w);
+            const user = userService.getById(w.user_id);
+            const updatedUser = userService.updateUserValues(user, undefined, getAllOfUser(user));
+            if (websocket.connections[user.username]) {
+                websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
+            }
+        }
+    });
+}
+
+module.exports = {create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse};

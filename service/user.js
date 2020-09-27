@@ -32,26 +32,37 @@ function create({ username, password, color }) {
     if (amount > 0) throw new ConflictError("Username is already taken.");
     password = security.encrypt(password, process.env.SECRET);
     const {lastInsertRowid: userId} = db
-        .prepare("INSERT INTO user (username, password, color) VALUES (?, ?, ?)")
-        .run(username, password, color);
+        .prepare("INSERT INTO user (username, password, color, hammer, max_hammers) VALUES (?, ?, ?, ?, ?)")
+        .run(username, password, color, config.START_HAMMER, config.MAX_HAMMERS);
     db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
         userId
     );
     return userId;
 }
 
+const priceMultiplier = config.BASE_TIMER * (60000 / config.MAKE_HAMMER_INTERVAL);
+
 /**
  * @param {User} user
  * @param {CastleDto[]} castles
+ * @param {Warehouse[]} warehouses
  * @return {User} - updated one
  */
-function updateUserLevel(user, castles) {
-    const level = castles.reduce((prev, curr) => prev + curr.points, 0);
-    const hammerPerMinute = level * 6;
-    db.prepare(`UPDATE user
-                SET hammer_per_minute = ?,
-                    level             = ?
-                WHERE id = ?`).run(hammerPerMinute, level, user.id);
+function updateUserValues(user, castles, warehouses) {
+    if (castles) {
+        const level = castles.reduce((prev, curr) => prev + curr.points, 0);
+        const hammerPerMinute = level * (60000 / config.MAKE_HAMMER_INTERVAL);
+        db.prepare(`UPDATE user
+                    SET hammer_per_minute = ?,
+                        level             = ?
+                    WHERE id = ?`).run(hammerPerMinute, level, user.id);
+    }
+    if (warehouses) {
+        const maxHammers = Math.max(config.MAX_HAMMERS, (warehouses.length) * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier);
+        db.prepare(`UPDATE user
+                    SET max_hammers = ?
+                    WHERE id = ?`).run(maxHammers, user.id);
+    }
     return getById(user.id)
 }
 
@@ -71,10 +82,10 @@ function getById(userId) {
  * @return {User}
  */
 function giveHammers(userId, amountOfHammers) {
-    const {hammer} = db.prepare("SELECT hammer FROM user WHERE id=?").get(userId);
+    const {hammer, maxHammers} = db.prepare("SELECT hammer, max_hammers as maxHammers FROM user WHERE id=?").get(userId);
     db.prepare(`UPDATE user
                 SET hammer = ?
-                WHERE id = ?`).run(Math.min(hammer + amountOfHammers, config.MAX_HAMMERS), userId);
+                WHERE id = ?`).run(Math.min(hammer + amountOfHammers, maxHammers), userId);
     return db.prepare(`SELECT *
                        FROM user
                        WHERE id = ?`).get(userId);
@@ -141,7 +152,7 @@ module.exports = {
     currentUser,
     getUserFromTokenBody,
     giveHammers,
-    updateUserLevel,
+    updateUserValues,
     getRanking,
     isOnline
 };
