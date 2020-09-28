@@ -13,6 +13,8 @@
  * @property {number} startY
  * @property {number} hammer_per_minute
  * @property {number} level
+ * @property {number} max_hammers
+ * @property {number} last_active_at
  */
 
 module.exports = {
@@ -29,6 +31,8 @@ module.exports = {
     startY: {type: "number"},
     hammer: {type: "number"},
     hammer_per_minute: {type: "number"},
-    level: {type: "number"}
+    level: {type: "number"},
+    max_hammers: {type: "number"},
+    last_active_at: {type: "number"}
   }
 };

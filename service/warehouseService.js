@@ -6,6 +6,7 @@ const userService = require("./user");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
+const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 
 const selectQuery = `warehouse.x,
                warehouse.y,
@@ -23,6 +24,10 @@ const selectQuery = `warehouse.x,
  * @param {User} user
  */
 function create(warehouseRequestBody, user) {
+    user.hammer -= getNextWarehousePrice(user);
+    if (user.hammer < 0) {
+        throw new NotEnoughHammerError("You have not enough hammer to build a warehouse.");
+    }
     const castle1 = castleService.getByPosition({
         x: warehouseRequestBody.castle1X,
         y: warehouseRequestBody.castle1Y
@@ -43,6 +48,9 @@ function create(warehouseRequestBody, user) {
     }
     db.prepare("INSERT INTO warehouse (x, y, castle_1_x, castle_1_y, castle_2_x, castle_2_y, user_id) VALUES (?,?,?,?,?,?,?);")
         .run(x, y, castle1X, castle1Y, castle2X, castle2Y, user.id);
+    db.prepare(`UPDATE user
+                SET hammer=?
+                WHERE id = ?`).run(user.hammer, user.id);
     const warehouse = getByPosition({x, y});
     const updatedUser = userService.updateUserValues(user, undefined, getAllOfUser(user));
     if (websocket.connections[user.username]) {
@@ -109,6 +117,15 @@ function getAllOfUser(user) {
 }
 
 /**
+ *
+ * @param {User} user
+ * @return {*}
+ */
+function getNextWarehousePrice(user) {
+    return Math.floor(user.max_hammers * 0.8);
+}
+
+/**
  * A warehouse is located on a road connecting two castles of one player.
  * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
  */
@@ -141,4 +158,4 @@ function cleanUp() {
     });
 }
 
-module.exports = {create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse};
+module.exports = {create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse, getNextWarehousePrice};
