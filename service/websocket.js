@@ -11,6 +11,14 @@ function broadcast(message, data) {
   Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit(message, data));
 }
 
+/**
+ * @param {string} username
+ * @return {boolean}
+ */
+function isOnline(username) {
+  return Boolean(websocket.connections[username]);
+}
+
 function init(http) {
   if (websocket.io) {
     return websocket;
@@ -58,4 +66,4 @@ function init(http) {
   return websocket;
 }
 
-module.exports = {init, broadcast, ...websocket};
+module.exports = {init, broadcast, isOnline, ...websocket};

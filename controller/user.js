@@ -3,7 +3,7 @@ const router = express.Router();
 const userService = require("../service/user");
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
-const castleService = require("../service/castle");
+const websocket = require("../service/websocket");
 
 router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
   res.send(userService.getAllUsers());
@@ -14,7 +14,7 @@ router.get("/ranking", hasUserRole(["USER"]), function (req, res) {
 });
 
 router.get("/is-online", hasUserRole(["USER"]), function (req, res) {
-  res.send({isOnline: userService.isOnline(req.query.username)});
+  res.send({isOnline: websocket.isOnline(req.query.username)});
 });
 
 router.get("/current", hasUserRole(["USER"]), function (req, res) {

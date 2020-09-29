@@ -5,7 +5,6 @@ const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
-const websocketService = require("./websocket");
 
 /**
  * @return {User}
@@ -136,14 +135,6 @@ function getRanking() {
     return db.prepare("SELECT username, level, id FROM user ORDER BY level DESC;").all();
 }
 
-/**
- * @param {string} username
- * @return {boolean}
- */
-function isOnline(username) {
-    return Boolean(websocketService.connections[username]);
-}
-
 module.exports = {
     getById,
     create,
@@ -153,6 +144,5 @@ module.exports = {
     getUserFromTokenBody,
     giveHammers,
     updateUserValues,
-    getRanking,
-    isOnline
+    getRanking
 };
