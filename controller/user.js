@@ -27,7 +27,11 @@ router.get("/current", hasUserRole(["USER"]), function (req, res) {
 router.post("/register", function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
-  userService.create(requestBody);
+
+  const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+  userService.checkIpForRegistration(ip);
+
+  userService.create(requestBody, ip);
   res.send({
     success: true
   });

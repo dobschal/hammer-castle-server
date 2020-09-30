@@ -5,6 +5,7 @@ const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
+const FraudError = require("../error/FraudError");
 
 /**
  * @return {User}
@@ -24,7 +25,7 @@ function getUserFromTokenBody(tokenBody) {
   return db.prepare(`SELECT * FROM user WHERE id=?`).get(tokenBody.id);
 }
 
-function create({ username, password, color }) {
+function create({username, password, color}, ip) {
     const {amount} = db
         .prepare("SELECT COUNT(*) AS amount FROM user WHERE username=?")
         .get(username);
@@ -36,6 +37,7 @@ function create({ username, password, color }) {
     db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
         userId
     );
+    db.prepare("INSERT INTO user_ip (user_id, ip, timestamp) VALUES (?,?,?);").run(userId, ip, Date.now());
     return userId;
 }
 
@@ -144,5 +146,11 @@ module.exports = {
     getUserFromTokenBody,
     giveHammers,
     updateUserValues,
-    getRanking
+    getRanking,
+    checkIpForRegistration(ip) {
+        const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=?").get(ip);
+        if (count > config.USERS_PER_IP) {
+            throw new FraudError("Too many users with same IP. Sorry!");
+        }
+    }
 };
