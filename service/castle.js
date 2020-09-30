@@ -278,7 +278,7 @@ function detectCastleConquer() {
     for (let i = runningConquers.length - 1; i > 0; i--) {
         const runningConquer = runningConquers[i];
         if (runningConquer.timestamp + config.CONQUER_DELAY < Date.now()) {
-            runningConquers.splice(index, 1);
+            runningConquers.splice(i, 1);
             websocket.broadcast("DELETE_CONQUER", runningConquer);
         }
     }
