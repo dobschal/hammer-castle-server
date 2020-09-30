@@ -12,6 +12,7 @@
  * @property {string} timestamp
  * @property {string} color
  * @property {string} username
+ * @property {number} chance_to_win // in percent
  */
 
 module.exports = {
@@ -27,6 +28,7 @@ module.exports = {
         lifetime: {type: "number"},
         timestamp: {type: "string"},
         color: {type: "string"},
-        username: {type: "string"}
+        username: {type: "string"},
+        chance_to_win: {type: "number"}
     }
 };

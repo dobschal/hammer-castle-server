@@ -50,9 +50,10 @@ function create(castlePosition, user) {
     }
     user.hammer = (user.hammer - price) || 0;
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
-    db.prepare(`INSERT INTO castle (user_id, x, y, points)
-                VALUES (?, ?, ?, ?);`)
-        .run(user.id, castlePosition.x, castlePosition.y, points);
+    const castleName = config.CASTLE_NAMES[Math.floor(Math.random() * config.CASTLE_NAMES.length)];
+    db.prepare(`INSERT INTO castle (user_id, x, y, points, name)
+                VALUES (?, ?, ?, ?, ?);`)
+        .run(user.id, castlePosition.x, castlePosition.y, points, castleName);
     const castle = getOne(castlePosition);
     db.prepare(`UPDATE user
                 SET startX=?,

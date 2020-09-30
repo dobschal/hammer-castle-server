@@ -41,15 +41,16 @@ router.post("/change-name", hasUserRole(["USER"]), function (req, res) {
   });
 });
 
-const castleFetchTimes = [];
+let castleFetchTimes = [];
 
 setInterval(() => {
   if (castleFetchTimes.length) {
-    const averageFetchTime = castleFetchTimes.reduce((prev, curr) => prev + curr, 0) / castleFetchTimes.length;
+    const averageFetchTime = Math.floor(castleFetchTimes.reduce((prev, curr) => prev + curr, 0) / castleFetchTimes.length);
     const min = Math.min.apply(null, castleFetchTimes);
     const max = Math.max.apply(null, castleFetchTimes);
-    console.log("[castle] Fetch castle times (average/max/min) in ms: ", averageFetchTime, max, min);
+    console.log("[castle] Fetch castle times (average/max/min/count) in ms: ", averageFetchTime, max, min, castleFetchTimes.length);
   }
+  castleFetchTimes = [];
 }, 10000);
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {

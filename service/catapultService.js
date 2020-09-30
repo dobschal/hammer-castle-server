@@ -9,6 +9,7 @@ const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
 const ConflictError = require("../error/ConflictError");
+const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 
 const selectQuery = `catapult.x,
                catapult.y,
@@ -19,6 +20,7 @@ const selectQuery = `catapult.x,
                catapult.timestamp,
                catapult.lifetime,
                catapult.user_id,
+               catapult.chance_to_win,
                user.color,
                user.username`;
 
@@ -27,6 +29,10 @@ const selectQuery = `catapult.x,
  * @param {User} user
  */
 function create(catapultRequestBody, user) {
+    user.hammer -= getNextCatapultPrice(user);
+    if (user.hammer < 0) {
+        throw new NotEnoughHammerError("You have not enough hammer to build a catapult.");
+    }
     const opponentCastle = castleService.getByPosition({
         x: catapultRequestBody.opponentCastleX,
         y: catapultRequestBody.opponentCastleY
@@ -48,11 +54,19 @@ function create(catapultRequestBody, user) {
     if (getByPosition({x, y})) {
         throw new ConflictError("There is already a catapult on that road!");
     }
-    db.prepare("INSERT INTO catapult (x, y, opponent_castle_x, opponent_castle_y, user_castle_x, user_castle_y, user_id, lifetime) VALUES (?,?,?,?,?,?,?,?);")
-        .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME);
+    const changeToWin = Math.floor(Math.min(80, userCastle.points / opponentCastle.points * 100));
+    db.prepare("INSERT INTO catapult (x, y, opponent_castle_x, opponent_castle_y, user_castle_x, user_castle_y, user_id, lifetime, chance_to_win) VALUES (?,?,?,?,?,?,?,?, ?);")
+        .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME, changeToWin);
     const catapult = getByPosition({x, y});
+    db.prepare(`UPDATE user
+                SET hammer=?
+                WHERE id = ?`).run(user.hammer, user.id);
+    if (websocket.connections[user.username]) {
+        websocket.connections[user.username].emit("UPDATE_USER", user);
+    }
     websocket.broadcast("NEW_CATAPULT", catapult);
     actionLogService.save("You built a catapult at " + x + "/" + y + ".", user.id, user.username);
+    actionLogService.save(user.username + " has built a catapult next to you at " + catapultRequestBody.x + "/" + catapultRequestBody.y + ".", opponentCastle.userId, opponentCastle.username);
     return catapult;
 }
 
@@ -101,7 +115,7 @@ function triggerCatapultAttacks() {
             const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(c.x, c.y, c.user_id);
             websocket.broadcast("DELETE_CATAPULT", c);
             if (opponentsCastle && opponentsCastle.userId !== c.user_id) { // is still not my castle? --> no friendly shooting
-                if (Math.random() >= 0.5) { // Throw the dice...
+                if (Math.random() <= c.chance_to_win / 100) { // Throw the dice...
                     const opponentUser = userService.getById(opponentsCastle.userId);
                     castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
                 }
@@ -115,7 +129,7 @@ function triggerCatapultAttacks() {
  * @return {number}
  */
 function getNextCatapultPrice(user) {
-    return Math.floor(castleService.getNextCastlePrice(user) * 0.8);
+    return Math.floor(castleService.getNextCastlePrice(user) * 0.6);
 }
 
 module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks, getNextCatapultPrice};
