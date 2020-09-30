@@ -4,7 +4,7 @@ const userService = require("./user");
 const websocket = require("./websocket");
 
 function makeHammers() {
-    console.log("[hammerService] Make hammers!");
+    const t1 = Date.now();
     const castles = castleService.getAll();
     const userPoints = {};
     castles.forEach(c => {
@@ -22,6 +22,7 @@ function makeHammers() {
             }
         }
     }
+    console.log("[hammerService] Made hammers in: " + (Date.now() - t1) + "ms.");
 }
 
 module.exports = {makeHammers};
