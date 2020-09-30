@@ -14,6 +14,7 @@ const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const userService = require("./user");
+const actionLogService = require("./actionLogService");
 
 /**
  * @type {Conquer[]}
@@ -64,6 +65,16 @@ function create(castlePosition, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_CASTLE", castle);
+    actionLogService.save("You built a castle at " + castlePosition.x + "/" + castlePosition.y + ".", user.id, user.username);
+    setTimeout(() => {
+        const userIdsOfNeighbors = castlesInDistance
+            .map(c => c.userId)
+            .filter((v, i, a) => a.indexOf(v) === i && v !== user.id);
+        userIdsOfNeighbors.forEach(userId => {
+            const neighborUser = userService.getById(userId);
+            actionLogService.save(user.username + " has built a castle next to you at " + castlePosition.x + "/" + castlePosition.y + ".", neighborUser.id, neighborUser.username)
+        });
+    });
     return castle;
 }
 

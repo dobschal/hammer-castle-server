@@ -4,6 +4,7 @@ const config = require("../config");
 const websocket = require("./websocket");
 const castleService = require("./castle");
 const userService = require("./user");
+const actionLogService = require("./actionLogService");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
@@ -51,6 +52,7 @@ function create(catapultRequestBody, user) {
         .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME);
     const catapult = getByPosition({x, y});
     websocket.broadcast("NEW_CATAPULT", catapult);
+    actionLogService.save("You built a catapult at " + x + "/" + y + ".", user.id, user.username);
     return catapult;
 }
 
@@ -108,4 +110,12 @@ function triggerCatapultAttacks() {
     });
 }
 
-module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks};
+/**
+ * @param {User} user
+ * @return {number}
+ */
+function getNextCatapultPrice(user) {
+    return Math.floor(castleService.getNextCastlePrice(user) * 0.8);
+}
+
+module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks, getNextCatapultPrice};

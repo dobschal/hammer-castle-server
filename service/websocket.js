@@ -1,6 +1,7 @@
 const security = require("../lib/security");
 const schema = require("../lib/schema");
 const userService = require("../service/user");
+const db = require("../lib/database");
 
 const websocket = {
   io: undefined,
@@ -57,6 +58,7 @@ function init(http) {
     }
   }).on("connection", socket => {
     console.log("[app] User connected: ", socket.user.username);
+    db.prepare("UPDATE USER SET last_active_at=? WHERE username=?;").run(Date.now(), socket.user.username);
     websocket.connections[socket.user.username] = socket;
     socket.on("disconnect", () => {
       console.log("[app] User disconnected: ", socket.user.username);

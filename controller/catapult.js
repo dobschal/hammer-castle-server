@@ -16,7 +16,15 @@ router.post("/create", hasUserRole(["USER"]), function (req, res) {
     });
 });
 
-router.get("/", hasUserRole(["USER"]), function(req, res) {
+
+router.get("/price", hasUserRole(["USER"]), function (req, res) {
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    const price = catapultService.getNextCatapultPrice(user);
+    res.send({price});
+});
+
+router.get("/", hasUserRole(["USER"]), function (req, res) {
     if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
         console.log("[catapult] Get catapults in area: ", req.query);
         res.send(catapultService.getCatapultsFromTo(
