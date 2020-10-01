@@ -146,9 +146,9 @@ function getRanking() {
  */
 function checkIpForLogin(ip, userId) {
     const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=? AND user_id!=? AND timestamp > ?").get(ip, userId, Date.now() - 1000 * 60 * 60);
-    if (count > config.USERS_PER_IP) {
-        throw new FraudError("Too many users (" + count + ") with same IP. Sorry!");
-    }
+    // if (count > config.USERS_PER_IP) {
+    //     throw new FraudError("Too many users (" + count + ") with same IP. Sorry!");
+    // }
     const userIpObj = db.prepare("SELECT * FROM user_ip WHERE ip=? AND user_id=?").get(ip, userId);
     if (userIpObj) {
         const result = db.prepare("UPDATE user_ip SET timestamp=? WHERE ip=? AND user_id=?").run(Date.now(), ip, userId);
@@ -161,9 +161,9 @@ function checkIpForLogin(ip, userId) {
 
 function checkIpForRegistration(ip) {
     const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=?").get(ip);
-    if (count > config.USERS_PER_IP) {
-        throw new FraudError("Too many users with same IP. Sorry!");
-    }
+    // if (count > config.USERS_PER_IP) {
+    //     throw new FraudError("Too many users with same IP. Sorry!");
+    // }
 }
 
 /**
