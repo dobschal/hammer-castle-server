@@ -15,6 +15,7 @@
  * @property {number} level
  * @property {number} max_hammers
  * @property {number} last_active_at
+ * @property {number} last_daily_reward_claim
  */
 
 module.exports = {
@@ -33,6 +34,7 @@ module.exports = {
     hammer_per_minute: {type: "number"},
     level: {type: "number"},
     max_hammers: {type: "number"},
-    last_active_at: {type: "number"}
+    last_active_at: {type: "number"},
+    last_daily_reward_claim: {type: "number"}
   }
 };

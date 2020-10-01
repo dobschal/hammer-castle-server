@@ -118,6 +118,10 @@ function triggerCatapultAttacks() {
                 if (Math.random() <= c.chance_to_win / 100) { // Throw the dice...
                     const opponentUser = userService.getById(opponentsCastle.userId);
                     castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
+                    actionLogService.save("Your catapult destroyed a castle of '" + opponentsCastle.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", c.user_id, c.username);
+                    actionLogService.save("Your castle '" + opponentsCastle.name + "' got destroyed by '" + c.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", opponentsCastle.user_id, opponentsCastle.username);
+                } else {
+                    actionLogService.save("Your catapult failed at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", c.user_id, c.username);
                 }
             }
         }

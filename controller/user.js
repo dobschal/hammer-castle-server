@@ -24,6 +24,14 @@ router.get("/current", hasUserRole(["USER"]), function (req, res) {
   res.send(user);
 });
 
+router.post("/daily-reward", function (req, res) {
+  const user = userService.currentUser(req);
+  if (user.last_daily_reward_claim < Date.now() - 1000 * 60 * 60 * 24) {
+    userService.claimDailyReward(user);
+  }
+  res.send({success: true});
+});
+
 router.post("/register", function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");

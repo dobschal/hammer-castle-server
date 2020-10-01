@@ -7,6 +7,7 @@
  * @property {number} points
  * @property {string} color
  * @property {string} username
+ * @property {string} name
  */
 
 module.exports = {

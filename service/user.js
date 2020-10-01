@@ -159,6 +159,27 @@ function checkIpForLogin(ip, userId) {
     }
 }
 
+function checkIpForRegistration(ip) {
+    const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=?").get(ip);
+    if (count > config.USERS_PER_IP) {
+        throw new FraudError("Too many users with same IP. Sorry!");
+    }
+}
+
+/**
+ * @param {User} user
+ */
+function claimDailyReward(user) {
+    db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=? WHERE id=?").run(user.max_hammers, Date.now(), user.id);
+    const websocket = require("./websocket");
+    if (websocket.connections[user.username]) {
+        websocket.connections[user.username].emit("UPDATE_USER", {
+            hammer: user.max_hammers,
+            last_daily_reward_claim: Date.now()
+        });
+    }
+}
+
 module.exports = {
     getById,
     create,
@@ -169,11 +190,7 @@ module.exports = {
     giveHammers,
     updateUserValues,
     getRanking,
-    checkIpForRegistration(ip) {
-        const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=?").get(ip);
-        if (count > config.USERS_PER_IP) {
-            throw new FraudError("Too many users with same IP. Sorry!");
-        }
-    },
-    checkIpForLogin
+    checkIpForRegistration,
+    checkIpForLogin,
+    claimDailyReward
 };
