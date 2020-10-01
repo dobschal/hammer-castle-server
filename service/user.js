@@ -145,7 +145,7 @@ function getRanking() {
  * @param {string} userId
  */
 function checkIpForLogin(ip, userId) {
-    const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=? AND user_id!=? AND timestamp > ?").get(ip, userId, Date.now() - 1000 * 60 * 60 * 24);
+    const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=? AND user_id!=? AND timestamp > ?").get(ip, userId, Date.now() - 1000 * 60 * 60);
     if (count > config.USERS_PER_IP) {
         throw new FraudError("Too many users (" + count + ") with same IP. Sorry!");
     }

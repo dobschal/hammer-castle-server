@@ -342,6 +342,12 @@ function _getAllCastlesWithUserPoints() {
     return castles;
 }
 
+/**
+ * @param {CastleDto} castle
+ * @param {number} userId
+ * @param {number} newPointsOfCastle
+ * @private
+ */
 function _handleCastleConquer(castle, userId, newPointsOfCastle) {
     const index = runningConquers.findIndex(rc => rc.castle.x === castle.x && rc.castle.y === castle.y);
     if (index === -1) {
@@ -349,7 +355,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
         const newConquer = {
             castle,
             userId,
-            timestamp: Date.now()
+            timestamp: Date.now() + (castle.points * 1000)
         };
         schema.is(newConquer, "dto/ConquerDto");
         runningConquers.push(newConquer);
@@ -358,7 +364,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
         let runningConquer = runningConquers[index];
         if (runningConquer.userId !== userId) {
             console.log("[castle] Conquerer for castle changed: ", castle.x, castle.y, userId);
-            runningConquer.timestamp = Date.now();
+            runningConquer.timestamp = Date.now() + (castle.points * 1000);
             runningConquer.userId = userId;
             websocket.broadcast("UPDATE_CONQUER", runningConquer);
         } else { // conquer is still active, check if timestamp is old enough for conquer final...
