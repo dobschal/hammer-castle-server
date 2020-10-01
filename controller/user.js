@@ -40,7 +40,8 @@ router.post("/register", function (req, res) {
 router.post("/authenticate", function(req, res, next) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
-  const {token} = userService.authenticate(requestBody);
+  const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+  const {token} = userService.authenticate(requestBody, ip);
   res.send({
     success: true,
     token

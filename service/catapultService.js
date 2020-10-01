@@ -129,7 +129,7 @@ function triggerCatapultAttacks() {
  * @return {number}
  */
 function getNextCatapultPrice(user) {
-    return Math.floor(castleService.getNextCastlePrice(user) * 0.6);
+    return Math.floor(castleService.getNextCastlePrice(user) * 0.4);
 }
 
 module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks, getNextCatapultPrice};

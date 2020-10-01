@@ -11,9 +11,9 @@ const FraudError = require("../error/FraudError");
  * @return {User}
  */
 function currentUser(req) {
-  const tokenBody = securityService.getTokenBody(req);
-  schema.is(tokenBody, "UserTokenBody");
-  return getUserFromTokenBody(tokenBody);
+    const tokenBody = securityService.getTokenBody(req);
+    schema.is(tokenBody, "UserTokenBody");
+    return getUserFromTokenBody(tokenBody);
 }
 
 
@@ -22,7 +22,9 @@ function currentUser(req) {
  * @return {User}
  */
 function getUserFromTokenBody(tokenBody) {
-  return db.prepare(`SELECT * FROM user WHERE id=?`).get(tokenBody.id);
+    return db.prepare(`SELECT *
+                       FROM user
+                       WHERE id = ?`).get(tokenBody.id);
 }
 
 function create({username, password, color}, ip) {
@@ -59,7 +61,7 @@ function updateUserValues(user, castles, warehouses) {
                     WHERE id = ?`).run(hammerPerMinute, level, user.id);
     }
     if (warehouses) {
-        const maxHammers = Math.max(config.MAX_HAMMERS, (warehouses.length + 2) * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier);
+        const maxHammers = Math.max(config.MAX_HAMMERS, (warehouses.length + 3) * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier);
         db.prepare(`UPDATE user
                     SET max_hammers = ?
                     WHERE id = ?`).run(maxHammers, user.id);
@@ -92,7 +94,7 @@ function giveHammers(userId, amountOfHammers) {
                        WHERE id = ?`).get(userId);
 }
 
-function authenticate({username, password}) {
+function authenticate({username, password}, ip) {
     password = security.encrypt(password, process.env.SECRET);
     const user = db
         .prepare(
@@ -111,11 +113,12 @@ function authenticate({username, password}) {
     delete user.password;
     const userTokenBody = {
         expires: Date.now() + config.TOKEN_EXPIRATION,
-    ...user
-  };
-  schema.is(userTokenBody, "UserTokenBody");
-  const token = security.signedUserToken(userTokenBody, process.env.SECRET);
-  return { token };
+        ...user
+    };
+    schema.is(userTokenBody, "UserTokenBody");
+    const token = security.signedUserToken(userTokenBody, process.env.SECRET);
+    checkIpForLogin(ip, user.id);
+    return {token};
 }
 
 function getAllUsers() {
@@ -123,7 +126,7 @@ function getAllUsers() {
         .prepare(
                 `SELECT user.id,
                         user.username,
-                        user.timestamp as registeredAt,
+                        user.timestamp               as registeredAt,
                         group_concat(user_role.role) as userRoles
                  FROM user
                           JOIN user_role on user.id = user_role.user_id
@@ -135,6 +138,25 @@ function getAllUsers() {
 
 function getRanking() {
     return db.prepare("SELECT username, level, id FROM user ORDER BY level DESC;").all();
+}
+
+/**
+ * @param {string} ip
+ * @param {string} userId
+ */
+function checkIpForLogin(ip, userId) {
+    const {count} = db.prepare("SELECT COUNT(*) as count FROM user_ip WHERE ip=? AND user_id!=? AND timestamp > ?").get(ip, userId, Date.now() - 1000 * 60 * 60 * 24);
+    if (count > config.USERS_PER_IP) {
+        throw new FraudError("Too many users (" + count + ") with same IP. Sorry!");
+    }
+    const userIpObj = db.prepare("SELECT * FROM user_ip WHERE ip=? AND user_id=?").get(ip, userId);
+    if (userIpObj) {
+        const result = db.prepare("UPDATE user_ip SET timestamp=? WHERE ip=? AND user_id=?").run(Date.now(), ip, userId);
+        console.log("[user] Stored IP of login (update): ", userId, ip);
+    } else {
+        const result = db.prepare("INSERT INTO user_ip (user_id, ip, timestamp) VALUES (?,?,?)").run(userId, ip, Date.now());
+        console.log("[user] Stored IP of login (insert): ", userId, ip);
+    }
 }
 
 module.exports = {
@@ -152,5 +174,6 @@ module.exports = {
         if (count > config.USERS_PER_IP) {
             throw new FraudError("Too many users with same IP. Sorry!");
         }
-    }
+    },
+    checkIpForLogin
 };
