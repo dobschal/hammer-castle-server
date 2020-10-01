@@ -4,6 +4,7 @@ const userService = require("../service/user");
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const websocket = require("../service/websocket");
+const requestIp = require('request-ip');
 
 router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
   res.send(userService.getAllUsers());
@@ -36,7 +37,7 @@ router.post("/register", function (req, res) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
 
-  const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+  const ip = requestIp.getClientIp(req);
   userService.checkIpForRegistration(ip);
 
   userService.create(requestBody, ip);
@@ -48,7 +49,7 @@ router.post("/register", function (req, res) {
 router.post("/authenticate", function(req, res, next) {
   const requestBody = req.body;
   schema.is(requestBody, "request/User");
-  const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+  const ip = requestIp.getClientIp(req);
   const {token} = userService.authenticate(requestBody, ip);
   res.send({
     success: true,
