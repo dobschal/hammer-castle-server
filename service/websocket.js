@@ -51,12 +51,14 @@ function init(http) {
       );
       schema.is(tokenBody, "UserTokenBody");
       const user = userService.getUserFromTokenBody(tokenBody);
+      if (!user) throw new Error("User missing");
       socket.user = user;
       next();
     } catch (e) {
       next(e);
     }
   }).on("connection", socket => {
+    if (!socket.user) return;
     console.log("[app] User connected: ", socket.user.username);
     db.prepare("UPDATE USER SET last_active_at=? WHERE username=?;").run(Date.now(), socket.user.username);
     websocket.connections[socket.user.username] = socket;
