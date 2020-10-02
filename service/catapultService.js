@@ -107,21 +107,28 @@ function getCatapultsFromTo(minX, minY, maxX, maxY) {
 }
 
 function triggerCatapultAttacks() {
-    getAll().forEach(c => {
-        const attacksAt = tool.dateFromDbTimestamp(c.timestamp);
-        if (attacksAt.getTime() + c.lifetime < Date.now()) {
+    getAll().forEach(catapult => {
+        const attacksAt = tool.dateFromDbTimestamp(catapult.timestamp);
+        if (attacksAt.getTime() + catapult.lifetime < Date.now()) {
             console.log("[catapultService] Catapult is going to attack.");
-            const opponentsCastle = castleService.getByPosition({x: c.opponent_castle_x, y: c.opponent_castle_y});
-            const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(c.x, c.y, c.user_id);
-            websocket.broadcast("DELETE_CATAPULT", c);
-            if (opponentsCastle && opponentsCastle.userId !== c.user_id) { // is still not my castle? --> no friendly shooting
-                if (Math.random() <= c.chance_to_win / 100) { // Throw the dice...
+            const opponentsCastle = castleService.getByPosition({x: catapult.opponent_castle_x, y: catapult.opponent_castle_y});
+            const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(catapult.x, catapult.y, catapult.user_id);
+            websocket.broadcast("DELETE_CATAPULT", catapult);
+            if (opponentsCastle && opponentsCastle.userId !== catapult.user_id) { // is still not my castle? --> no friendly shooting
+                if (Math.random() <= catapult.chance_to_win / 100) { // Throw the dice...
                     const opponentUser = userService.getById(opponentsCastle.userId);
                     castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
-                    actionLogService.save("Your catapult destroyed a castle of '" + opponentsCastle.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", c.user_id, c.username);
-                    actionLogService.save("Your castle '" + opponentsCastle.name + "' got destroyed by '" + c.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", opponentsCastle.user_id, opponentsCastle.username);
+                    actionLogService.save(
+                        "Your catapult destroyed a castle of '" + opponentsCastle.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!",
+                        catapult.user_id,
+                        catapult.username
+                    );
+                    actionLogService.save(
+                        "Your castle '" + opponentsCastle.name + "' got destroyed by '" + catapult.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!",
+                        opponentsCastle.userId,
+                        opponentsCastle.username);
                 } else {
-                    actionLogService.save("Your catapult failed at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", c.user_id, c.username);
+                    actionLogService.save("Your catapult failed at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", catapult.user_id, catapult.username);
                 }
             }
         }
