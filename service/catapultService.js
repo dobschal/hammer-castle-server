@@ -54,7 +54,7 @@ function create(catapultRequestBody, user) {
     if (getByPosition({x, y})) {
         throw new ConflictError("There is already a catapult on that road!");
     }
-    const changeToWin = Math.floor(Math.min(66, (userCastle.points / opponentCastle.points) * 100));
+    const changeToWin = Math.floor(Math.min(66, ((userCastle.points / opponentCastle.points) * 100) / 2));
     db.prepare("INSERT INTO catapult (x, y, opponent_castle_x, opponent_castle_y, user_castle_x, user_castle_y, user_id, lifetime, chance_to_win) VALUES (?,?,?,?,?,?,?,?, ?);")
         .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME, changeToWin);
     const catapult = getByPosition({x, y});
