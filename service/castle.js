@@ -14,6 +14,7 @@ const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
+const ConflictError = require("../error/ConflictError");
 const userService = require("./user");
 const actionLogService = require("./actionLogService");
 
@@ -107,6 +108,10 @@ function deleteCastle(castlePosition, user) {
     }
     if (user.id !== castleToDelete.userId) {
         throw new PermissionError("You cannot destroy a castle, you don't own...");
+    }
+    const {count} = db.prepare("SELECT COUNT(*) as count FROM castle WHERE user_id=?").get(user.id);
+    if(count <= 2) {
+        throw new ConflictError("You cannot delete your last 2 castles...");
     }
     _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
     db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
