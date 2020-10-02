@@ -13,6 +13,7 @@ const CastleMinDistanceError = require("../error/CastleMinDistanceError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
+const WrongPositionError = require("../error/WrongPositionError");
 const userService = require("./user");
 const actionLogService = require("./actionLogService");
 
@@ -32,6 +33,15 @@ const castleDtoSqlQuery = `
 `;
 
 /**
+ * @param {User} user
+ * @return {boolean}
+ */
+function isFirstCastle(user) {
+    const {count} = db.prepare("SELECT COUNT(*) as count FROM castle WHERE user_id=?").get(user.id);
+    return count === 0;
+}
+
+/**
  * @param {Position} castlePosition
  * @param {User} user
  * @return {CastleDto}
@@ -41,8 +51,14 @@ function create(castlePosition, user) {
         throw new CastleInsideBlockAreaError("Tried to build a castle inside a blocked area.");
     }
     const castlesInDistance = getCastlesInDistance(castlePosition, config.MAX_CASTLE_DISTANCE * 2);
-    if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MIN_CASTLE_DISTANCE)) {
-        throw new CastleMinDistanceError();
+    if (isFirstCastle(user)) {
+        if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MAX_CASTLE_DISTANCE)) {
+            throw new WrongPositionError("The new position is too close to a other castle!");
+        }
+    } else {
+        if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MIN_CASTLE_DISTANCE)) {
+            throw new CastleMinDistanceError("The new position is too close to a other castle.");
+        }
     }
     const price = getNextCastlePrice(user);
     if (user.hammer < price) {
@@ -260,6 +276,10 @@ function detectCastleConquer() {
     const t1 = Date.now();
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
+        if(!castles.some(c2 => (c2.x !== c.x || c2.y !== c.y) && c.userId === c2.userId)) {
+            console.log("[castle] User has only one castle left: ", c.username);
+            return;
+        }
         let maxPoints = 0;
         let userId = undefined;
         Object.keys(c.pointsPerUser).forEach(userId2 => {
@@ -323,7 +343,7 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
 }
 
 function _getAllCastlesWithUserPoints() {
-    const castles = getAll().map(c => {
+    let castles = getAll().map(c => {
         c.pointsPerUser = {};
         return c;
     });

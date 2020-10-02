@@ -39,6 +39,20 @@ module.exports = {
         "Tirith",
         "Barad-dùr",
         "Amon",
-        "Hyrule"
+        "Hyrule",
+        "Greenhill",
+        "Maetrine",
+        "Barkhasmted",
+        "Baston",
+        "Bordium",
+        "Portam",
+        "Marshwood",
+        "Harding",
+        "Earlton",
+        "Scarwood",
+        "Plympford",
+        "Falkerstone",
+        "Darthill",
+        "Bargsea"
     ]
 };
