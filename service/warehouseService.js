@@ -7,6 +7,7 @@ const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+const actionLogService = require("./actionLogService");
 
 const selectQuery = `warehouse.x,
                warehouse.y,
@@ -57,6 +58,7 @@ function create(warehouseRequestBody, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_WAREHOUSE", warehouse);
+    actionLogService.save("You built a warehouse at " + x + "/" + y + ".", user.id, user.username);
     return warehouse;
 }
 
