@@ -33,9 +33,10 @@ function create({username, password, color}, ip) {
         .get(username);
     if (amount > 0) throw new ConflictError("Username is already taken.");
     password = security.encrypt(password, process.env.SECRET);
+    const {x, y} = _getStartPosition();
     const {lastInsertRowid: userId} = db
-        .prepare("INSERT INTO user (username, password, color, hammer, max_hammers) VALUES (?, ?, ?, ?, ?)")
-        .run(username, password, color, config.START_HAMMER, config.MAX_HAMMERS);
+        .prepare("INSERT INTO user (username, password, color, hammer, max_hammers, startX, startY) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .run(username, password, color, config.START_HAMMER, config.MAX_HAMMERS, x, y);
     db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
         userId
     );
@@ -171,6 +172,8 @@ function checkIpForRegistration(ip) {
  */
 function claimDailyReward(user) {
     db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=? WHERE id=?").run(user.max_hammers, Date.now(), user.id);
+    const actionLogService = require("./actionLogService");
+    actionLogService.save("You claimed your daily reward and filled up your storage with hammers fro free.", user.id, user.username);
     const websocket = require("./websocket");
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", {
@@ -178,6 +181,27 @@ function claimDailyReward(user) {
             last_daily_reward_claim: Date.now()
         });
     }
+}
+
+/**
+ * @return {Position}
+ */
+function _getStartPosition() {
+    const position = db.prepare("SELECT x, y FROM castle ORDER BY ABS(X) DESC, ABS(Y) DESC LIMIT 1").get() || {
+        x: 0,
+        y: 0
+    };
+    position.x += Math.floor(Math.random() * 100);
+    position.y += Math.floor(Math.random() * 100);
+    return position;
+}
+
+/**
+ * @param {number} userId
+ * @return {Position}
+ */
+function getPlayersHome(userId) {
+    return db.prepare("SELECT x, y FROM castle WHERE user_id=? ORDER BY timestamp DESC LIMIT 1").get(userId) || {x: 0, y: 0};
 }
 
 module.exports = {
@@ -192,5 +216,6 @@ module.exports = {
     getRanking,
     checkIpForRegistration,
     checkIpForLogin,
-    claimDailyReward
+    claimDailyReward,
+    getPlayersHome
 };

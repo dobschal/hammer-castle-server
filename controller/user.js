@@ -18,6 +18,11 @@ router.get("/is-online", hasUserRole(["USER"]), function (req, res) {
   res.send({isOnline: websocket.isOnline(req.query.username)});
 });
 
+router.get("/home", hasUserRole(["USER"]), function (req, res) {
+  const userId = Number(req.query["user_id"]);
+  res.send({position: userService.getPlayersHome(userId)});
+});
+
 router.get("/current", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
   delete user.password;
