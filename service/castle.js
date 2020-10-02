@@ -276,7 +276,7 @@ function detectCastleConquer() {
     const t1 = Date.now();
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
-        if (!castles.filter(c2 => c2.userId === c.userId).length <= 2) {
+        if (castles.filter(c2 => c2.userId === c.userId).length <= 2) {
             console.log("[castle] User has only two castles left: ", c.username);
             return;
         }
