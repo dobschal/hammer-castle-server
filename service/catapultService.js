@@ -111,11 +111,16 @@ function triggerCatapultAttacks() {
         const attacksAt = tool.dateFromDbTimestamp(catapult.timestamp);
         if (attacksAt.getTime() + catapult.lifetime < Date.now()) {
             console.log("[catapultService] Catapult is going to attack.");
-            const opponentsCastle = castleService.getByPosition({x: catapult.opponent_castle_x, y: catapult.opponent_castle_y});
+            const opponentsCastle = castleService.getByPosition({
+                x: catapult.opponent_castle_x,
+                y: catapult.opponent_castle_y
+            });
             const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(catapult.x, catapult.y, catapult.user_id);
             websocket.broadcast("DELETE_CATAPULT", catapult);
-            if (opponentsCastle && opponentsCastle.userId !== catapult.user_id) { // is still not my castle? --> no friendly shooting
-                if (Math.random() <= catapult.chance_to_win / 100) { // Throw the dice...
+            if (opponentsCastle && opponentsCastle.userId !== catapult.user_id) {
+                const dice = Math.random();// is still not my castle? --> no friendly shooting
+                console.log("[catapultService] Catapult attack (dice/chance): ", dice, catapult.chance_to_win / 100);
+                if (dice <= catapult.chance_to_win / 100) { // Throw the dice...
                     const opponentUser = userService.getById(opponentsCastle.userId);
                     castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
                     actionLogService.save(
