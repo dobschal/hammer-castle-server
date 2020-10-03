@@ -133,15 +133,10 @@ function getNextWarehousePrice(user) {
  */
 function cleanUp() {
     const t1 = Date.now();
+    const castles = castleService.getAll();
     getAll().forEach(w => {
-        const castle1 = castleService.getByPosition({
-            x: w.castle_1_x,
-            y: w.castle_1_y
-        });
-        const castle2 = castleService.getByPosition({
-            x: w.castle_2_x,
-            y: w.castle_2_y
-        });
+        const castle1 = castles.find(c => c.x === w.castle_1_x && c.y === w.castle_1_y);
+        const castle2 = castles.find(c => c.x === w.castle_2_x && c.y === w.castle_2_y);
         let remove = false;
         if (!castle1 || !castle2) {
             console.log("[warehouseService] Destroy warehouse, close castle was destroyed.");
@@ -157,6 +152,7 @@ function cleanUp() {
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
             }
+            actionLogService.save("Your warehouse got destroyed at " + x + "/" + y + ".", updatedUser.id, updatedUser.username);
         }
     });
     console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");

@@ -14,7 +14,7 @@ module.exports = {
     AVERAGE_ROADS_PER_CASTLE: 4, // necessary for price calculation. The higher the value, the more complicated to play.
     MAX_HAMMERS: 180, // for having no warehouse...
     START_HAMMER: 150,
-    BASE_TIMER: 15, // minutes
+    BASE_TIMER: 20, // minutes
 
     USERS_PER_IP: 3,
 

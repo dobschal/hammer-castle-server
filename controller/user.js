@@ -25,8 +25,10 @@ router.get("/home", hasUserRole(["USER"]), function (req, res) {
 
 router.get("/current", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
-  delete user.password;
-  delete user.email_verified;
+  if (user) {
+    delete user.password;
+    delete user.email_verified;
+  }
   res.send(user);
 });
 
