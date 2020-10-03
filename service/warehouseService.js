@@ -152,7 +152,7 @@ function cleanUp() {
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
             }
-            actionLogService.save("Your warehouse got destroyed at " + x + "/" + y + ".", updatedUser.id, updatedUser.username);
+            actionLogService.save("Your warehouse got destroyed at " + w.x + "/" + w.y + ".", updatedUser.id, updatedUser.username);
         }
     });
     console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
