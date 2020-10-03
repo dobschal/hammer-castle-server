@@ -124,7 +124,7 @@ function getAllOfUser(user) {
  * @return {*}
  */
 function getNextWarehousePrice(user) {
-    return Math.floor(user.max_hammers * 0.6);
+    return Math.floor(user.max_hammers * 0.5);
 }
 
 /**
