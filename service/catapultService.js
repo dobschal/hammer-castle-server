@@ -54,9 +54,9 @@ function create(catapultRequestBody, user) {
     if (getByPosition({x, y})) {
         throw new ConflictError("There is already a catapult on that road!");
     }
-    const changeToWin = Math.floor(Math.min(66, ((userCastle.points / opponentCastle.points) * 100) / 2));
+    const chanceToWin = Math.floor(Math.min(66, 1 / opponentCastle.points));
     db.prepare("INSERT INTO catapult (x, y, opponent_castle_x, opponent_castle_y, user_castle_x, user_castle_y, user_id, lifetime, chance_to_win) VALUES (?,?,?,?,?,?,?,?, ?);")
-        .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME, changeToWin);
+        .run(x, y, opponentCastleX, opponentCastleY, userCastleX, userCastleY, user.id, config.CATAPULT_LIFETIME, chanceToWin);
     const catapult = getByPosition({x, y});
     db.prepare(`UPDATE user
                 SET hammer=?
@@ -147,7 +147,7 @@ function triggerCatapultAttacks() {
  * @return {number}
  */
 function getNextCatapultPrice(user) {
-    return Math.floor(castleService.getNextCastlePrice(user) * 0.4);
+    return Math.floor(castleService.getNextCastlePrice(user) * 0.35);
 }
 
 module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks, getNextCatapultPrice};
