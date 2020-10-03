@@ -107,6 +107,7 @@ function getCatapultsFromTo(minX, minY, maxX, maxY) {
 }
 
 function triggerCatapultAttacks() {
+    const t1 = Date.now();
     getAll().forEach(catapult => {
         const attacksAt = tool.dateFromDbTimestamp(catapult.timestamp);
         if (attacksAt.getTime() + catapult.lifetime < Date.now()) {
@@ -138,6 +139,7 @@ function triggerCatapultAttacks() {
             }
         }
     });
+    console.log("[catapultService] Triggered catapult attacks in " + (Date.now() - t1) + "ms.");
 }
 
 /**

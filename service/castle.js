@@ -270,7 +270,7 @@ function castlePointsCleanUp() {
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
         if (c.pointsPerUser[c.userId] !== c.points) {
-            db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId], c.x, c.y);
+            db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId] || 0, c.x, c.y);
             console.log("[castle] Updated castles points, were not correct: ", c);
         }
     });

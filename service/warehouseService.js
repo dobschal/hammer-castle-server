@@ -132,6 +132,7 @@ function getNextWarehousePrice(user) {
  * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
  */
 function cleanUp() {
+    const t1 = Date.now();
     getAll().forEach(w => {
         const castle1 = castleService.getByPosition({
             x: w.castle_1_x,
@@ -158,6 +159,7 @@ function cleanUp() {
             }
         }
     });
+    console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
 }
 
 module.exports = {create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse, getNextWarehousePrice};
