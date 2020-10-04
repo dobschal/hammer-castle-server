@@ -62,7 +62,7 @@ function updateUserValues(user, castles, warehouses) {
                     WHERE id = ?`).run(hammerPerMinute, level, user.id);
     }
     if (warehouses) {
-        const maxHammers = Math.ceil(Math.max(config.MAX_HAMMERS, (warehouses.length + 1) * 1.5 * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier));
+        const maxHammers = Math.ceil(Math.max(config.MAX_HAMMERS, (warehouses.length + 1) * 1.6 * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier));
         db.prepare(`UPDATE user
                     SET max_hammers = ?
                     WHERE id = ?`).run(maxHammers, user.id);
