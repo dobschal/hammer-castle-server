@@ -389,6 +389,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
         let runningConquer = runningConquers[index];
         if (runningConquer.userId !== userId) {
             console.log("[castle] Conquerer for castle changed: ", castle.x, castle.y, userId);
+            runningConquer.castle = getByPosition(castle);
             runningConquer.timestamp = Date.now() + (castle.points * 1000);
             runningConquer.userId = userId;
             websocket.broadcast("UPDATE_CONQUER", runningConquer);
