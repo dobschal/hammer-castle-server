@@ -123,7 +123,7 @@ function triggerCatapultAttacks() {
                 console.log("[catapultService] Catapult attack (dice/chance): ", dice, catapult.chance_to_win / 100);
                 if (dice <= catapult.chance_to_win / 100) { // Throw the dice...
                     const opponentUser = userService.getById(opponentsCastle.userId);
-                    castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser);
+                    castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser, false);
                     actionLogService.save(
                         "Your catapult destroyed a castle of '" + opponentsCastle.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!",
                         catapult.user_id,

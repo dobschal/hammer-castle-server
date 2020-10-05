@@ -26,7 +26,7 @@ router.delete("/", hasUserRole(["USER"]), function (req, res) {
   schema.is(user, "entity/User");
   res.send({
     success: true,
-    castle: castleService.deleteCastle(requestBody, user)
+    castle: castleService.deleteCastle(requestBody, user, true)
   });
 });
 

@@ -99,9 +99,10 @@ function create(castlePosition, user) {
 /**
  * @param {Position} castlePosition
  * @param {User} user
+ * @param {boolean} isSelfDelete
  * @return {CastleDto}
  */
-function deleteCastle(castlePosition, user) {
+function deleteCastle(castlePosition, user, isSelfDelete = true) {
     const castleToDelete = getOne(castlePosition);
     if (!castleToDelete) {
         throw new CastleNotFoundError("The castle you try to delete, does not exist.");
@@ -109,9 +110,11 @@ function deleteCastle(castlePosition, user) {
     if (user.id !== castleToDelete.userId) {
         throw new PermissionError("You cannot destroy a castle, you don't own...");
     }
-    const {count} = db.prepare("SELECT COUNT(*) as count FROM castle WHERE user_id=?").get(user.id);
-    if(count <= 2) {
-        throw new ConflictError("You cannot delete your last 2 castles...");
+    if (isSelfDelete) {
+        const {count} = db.prepare("SELECT COUNT(*) as count FROM castle WHERE user_id=?").get(user.id);
+        if (count <= 2) {
+            throw new ConflictError("You cannot delete your last 2 castles...");
+        }
     }
     _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
     db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
