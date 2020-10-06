@@ -4,6 +4,7 @@ const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const warehouseService = require("../service/warehouseService");
 const userService = require("../service/user");
+const priceService = require("../service/priceService");
 
 router.post("/create", hasUserRole(["USER"]), function (req, res) {
     const requestBody = req.body;
@@ -19,7 +20,7 @@ router.post("/create", hasUserRole(["USER"]), function (req, res) {
 router.get("/price", hasUserRole(["USER"]), function (req, res) {
     const user = userService.currentUser(req);
     schema.is(user, "entity/User");
-    const price = warehouseService.getNextWarehousePrice(user);
+    const price = priceService.nextWarehousePrice(user.id);
     res.send({price});
 });
 

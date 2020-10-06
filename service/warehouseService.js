@@ -123,15 +123,6 @@ function getAllOfUser(user) {
 }
 
 /**
- *
- * @param {User} user
- * @return {*}
- */
-function getNextWarehousePrice(user) {
-    return Math.floor(user.max_hammers * 0.5);
-}
-
-/**
  * A warehouse is located on a road connecting two castles of one player.
  * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
  */
@@ -163,7 +154,7 @@ function cleanUp() {
 }
 
 module.exports = {
-    create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse, getNextWarehousePrice,
+    create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse,
 
     /**
      * @param {number} userId
