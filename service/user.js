@@ -6,6 +6,10 @@ const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
 const FraudError = require("../error/FraudError");
+let priceService;
+setTimeout(() => {
+    priceService = require("./priceService");
+}, 1000);
 
 /**
  * @return {User}
@@ -36,38 +40,12 @@ function create({username, password, color}, ip) {
     const {x, y} = _getStartPosition();
     const {lastInsertRowid: userId} = db
         .prepare("INSERT INTO user (username, password, color, hammer, max_hammers, startX, startY) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .run(username, password, color, config.START_HAMMER, config.MAX_HAMMERS, x, y);
+        .run(username, password, color, 200, 0, x, y);
     db.prepare("INSERT INTO user_role (user_id, role) VALUES (?, 'USER')").run(
         userId
     );
     db.prepare("INSERT INTO user_ip (user_id, ip, timestamp) VALUES (?,?,?);").run(userId, ip, Date.now());
     return userId;
-}
-
-const priceMultiplier = config.BASE_TIMER * (60000 / config.MAKE_HAMMER_INTERVAL);
-
-/**
- * @param {User} user
- * @param {CastleDto[]} castles
- * @param {Warehouse[]} warehouses
- * @return {User} - updated one
- */
-function updateUserValues(user, castles, warehouses) {
-    if (castles) {
-        const level = castles.reduce((prev, curr) => prev + curr.points, 0);
-        const hammerPerMinute = level * (60000 / config.MAKE_HAMMER_INTERVAL);
-        db.prepare(`UPDATE user
-                    SET hammer_per_minute = ?,
-                        level             = ?
-                    WHERE id = ?`).run(hammerPerMinute, level, user.id);
-    }
-    if (warehouses) {
-        const maxHammers = Math.ceil(Math.max(config.MAX_HAMMERS, (warehouses.length + 1) * 1.6 * config.AVERAGE_ROADS_PER_CASTLE * priceMultiplier));
-        db.prepare(`UPDATE user
-                    SET max_hammers = ?
-                    WHERE id = ?`).run(maxHammers, user.id);
-    }
-    return getById(user.id)
 }
 
 /**
@@ -78,21 +56,6 @@ function getById(userId) {
     return db.prepare(`SELECT *
                        FROM user
                        WHERE id = ?`).get(userId)
-}
-
-/**
- * @param {number} userId
- * @param {number} amountOfHammers
- * @return {User}
- */
-function giveHammers(userId, amountOfHammers) {
-    const {hammer, maxHammers} = db.prepare("SELECT hammer, max_hammers as maxHammers FROM user WHERE id=?").get(userId);
-    db.prepare(`UPDATE user
-                SET hammer = ?
-                WHERE id = ?`).run(Math.min(hammer + amountOfHammers, maxHammers), userId);
-    return db.prepare(`SELECT *
-                       FROM user
-                       WHERE id = ?`).get(userId);
 }
 
 function authenticate({username, password}, ip) {
@@ -191,8 +154,8 @@ function _getStartPosition() {
         x: 0,
         y: 0
     };
-    position.x += Math.floor(Math.random() * 100);
-    position.y += Math.floor(Math.random() * 100);
+    position.x += Math.floor(Math.random() * 1000);
+    position.y += Math.floor(Math.random() * 1000);
     return position;
 }
 
@@ -211,8 +174,49 @@ module.exports = {
     getAllUsers,
     currentUser,
     getUserFromTokenBody,
-    giveHammers,
-    updateUserValues,
+
+    /**
+     * @param {number} userId
+     * @param {number} amountOfHammers
+     * @return {User}
+     */
+    giveHammers(userId, amountOfHammers) {
+        const user = getById(userId);
+        if (user.hammer > user.max_hammers) return user;
+        user.hammer = Math.min(user.hammer + Math.max(1, amountOfHammers), user.max_hammers);
+        db.prepare(`UPDATE user
+                    SET hammer = ?
+                    WHERE id = ?`).run(user.hammer, userId);
+        return user;
+    },
+
+    /**
+     * @param {number} userId
+     * @return {User} - updated one
+     */
+    updateUserValues(userId) {
+        const maxHammers = priceService.calculateMaxHammer(userId);
+        const {level} = db.prepare(`select sum(c.points) as level
+                                    from castle c
+                                    where c.user_id = ?`).get(userId);
+        db.prepare(`UPDATE user
+                    SET hammer_per_minute = ?,
+                        level             = ?,
+                        max_hammers       = ?
+                    WHERE id = ?`).run(level, level, maxHammers, userId);
+        return getById(userId);
+    },
+
+    cleanUp() {
+        const t1 = Date.now();
+        const users = db.prepare(`select *
+                                  from user`).all();
+        users.forEach(user => {
+            this.updateUserValues(user.id);
+        });
+        console.log("[user] Cleaned up " + users.length + " user in " + (Date.now() - t1) + "ms.");
+    },
+
     getRanking,
     checkIpForRegistration,
     checkIpForLogin,

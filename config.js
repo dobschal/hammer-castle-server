@@ -8,13 +8,12 @@ module.exports = {
     DETECT_CATAPULT_ATTACK_INTERVAL: 1000 * 2,
     CASTLE_CLEAN_UP_INTERVAL: 1000 * 60,
     WAREHOUSE_CLEAN_UP_INTERVAL: 1000 * 2,
+    USER_CLEAN_UP_INTERVAL: 1000 * 10,
     CATAPULT_LIFETIME: 1000 * 60 * 5, // needs to be the same as in client!!!
 
     MAKE_HAMMER_INTERVAL: 1000 * 10,
-    AVERAGE_ROADS_PER_CASTLE: 4, // necessary for price calculation. The higher the value, the more complicated to play.
-    MAX_HAMMERS: 180, // for having no warehouse...
-    START_HAMMER: 150,
-    BASE_TIMER: 15, // minutes
+    AVERAGE_POINTS_PER_CASTLE: 3.75, // necessary for price calculation. The higher the value, the more complicated to play.
+    MAX_HAMMER_HOURS: 3, // clip after 3 hours of gathering
 
     USERS_PER_IP: 3,
 

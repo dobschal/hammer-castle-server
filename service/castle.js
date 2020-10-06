@@ -15,8 +15,14 @@ const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
 const ConflictError = require("../error/ConflictError");
-const userService = require("./user");
+let priceService;
+let userService;
 const actionLogService = require("./actionLogService");
+
+setTimeout(() => {
+    priceService = require("./priceService");
+    userService = require("./user");
+}, 1000);
 
 /**
  * @type {Conquer[]}
@@ -61,28 +67,34 @@ function create(castlePosition, user) {
             throw new CastleMinDistanceError("The new position is too close to a other castle.");
         }
     }
-    const price = getNextCastlePrice(user);
+
+    const price = priceService.nextCastlePrice(user.id);
     if (user.hammer < price) {
         throw new NotEnoughHammerError("You have not enough hammer to build a castle!");
     }
     user.hammer = (user.hammer - price) || 0;
+
     const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     const castleName = config.CASTLE_NAMES[Math.floor(Math.random() * config.CASTLE_NAMES.length)];
     db.prepare(`INSERT INTO castle (user_id, x, y, points, name)
                 VALUES (?, ?, ?, ?, ?);`)
         .run(user.id, castlePosition.x, castlePosition.y, points, castleName);
     const castle = getOne(castlePosition);
+    websocket.broadcast("NEW_CASTLE", castle);
+
+    blockAreaService.createRandomBlockArea(castle, castlesInDistance);
+
+    // TODO: refactor user update...
     db.prepare(`UPDATE user
                 SET startX=?,
                     startY=?,
                     hammer=?
                 WHERE id = ?`).run(castlePosition.x, castlePosition.y, user.hammer, user.id);
-    blockAreaService.createRandomBlockArea(castle, castlesInDistance);
-    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
+    const updatedUser = userService.updateUserValues(user.id);
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
-    websocket.broadcast("NEW_CASTLE", castle);
+
     actionLogService.save("You built a castle at " + castlePosition.x + "/" + castlePosition.y + ".", user.id, user.username);
     setTimeout(() => {
         const userIdsOfNeighbors = castlesInDistance
@@ -118,7 +130,7 @@ function deleteCastle(castlePosition, user, isSelfDelete = true) {
     }
     _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
     db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
-    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
+    const updatedUser = userService.updateUserValues(user.id);
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
@@ -237,22 +249,6 @@ function changeCastlesUser(x, y, newUserId, newPointsOfCastle) {
     return getOne({x, y});
 }
 
-const priceMultiplier = config.BASE_TIMER * (60000 / config.MAKE_HAMMER_INTERVAL);
-
-/**
- * The idea is to allow a user to build a castle every 15 minutes.
- * Hammers are given all X seconds. The price per castle raises, but the production of the hammers too.
- * So the relation between the price of a castle and the amount of hammers gifted remains constant.
- * @param {User} user
- * @return {number}
- */
-function getNextCastlePrice(user) {
-    const {count} = db.prepare(`SELECT COUNT(*) AS count
-                                FROM castle
-                                WHERE user_id = ?`).get(user.id);
-    return Math.min(count - 1, config.AVERAGE_ROADS_PER_CASTLE) * count * priceMultiplier;
-}
-
 /**
  * @return {Conquer[]}
  */
@@ -285,7 +281,6 @@ function detectCastleConquer() {
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
         if (castles.filter(c2 => c2.userId === c.userId).length <= 2) {
-            console.log("[castle] User has only two castles left: ", c.username);
             return;
         }
         let maxPoints = 0;
@@ -406,7 +401,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
 
                 involvedUsers.forEach((userId) => {
                     const user = userService.getById(userId);
-                    const updatedUser = userService.updateUserValues(user, getAllOfUser(user));
+                    const updatedUser = userService.updateUserValues(user.id);
                     if (websocket.connections[user.username]) {
                         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
                     }
@@ -428,10 +423,30 @@ module.exports = {
     getCastlesInDistance,
     getCastlesFromTo,
     changeName,
-    getNextCastlePrice,
     getConquers,
     getAllOfUser,
     castlePointsCleanUp,
     detectCastleConquer,
-    getByPosition
+    getByPosition,
+
+    /**
+     * @param {number} userId
+     * @return {number}
+     */
+    countCastlesOfUser(userId) {
+        const {count} = db.prepare(`select count(*) as count
+                                    from castle
+                                    where user_id = ?`).get(userId);
+        return count;
+    },
+
+    /**
+     * @return {UserPointsDto[]}
+     */
+    getPointsSummedUpPerUser() {
+        return db.prepare(`select u.id as userId, u.username as username, sum(c.points) as points
+                           from castle c
+                                    join user u on u.id = c.user_id
+                           group by u.id`).all();
+    }
 };

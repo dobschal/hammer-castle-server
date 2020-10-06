@@ -1,16 +1,18 @@
 const statsService = require("./service/statsService");
-const hammerService = require("./service/hammerService");
+const priceService = require("./service/priceService");
 const castleService = require("./service/castle");
 const catapultService = require("./service/catapultService");
 const warehouseService = require("./service/warehouseService");
+const userService = require("./service/user");
 const config = require("./config");
 
 module.exports = {
     run: function () {
         setInterval(castleService.detectCastleConquer, config.DETECT_CONQUER_INTERVAL);
         setInterval(castleService.castlePointsCleanUp, config.CASTLE_CLEAN_UP_INTERVAL);
+        setInterval(userService.cleanUp.bind(userService), config.USER_CLEAN_UP_INTERVAL);
         setInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);
-        setInterval(hammerService.makeHammers, config.MAKE_HAMMER_INTERVAL);
+        setInterval(priceService.makeHammers, config.MAKE_HAMMER_INTERVAL);
         setInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
 
         // Stats

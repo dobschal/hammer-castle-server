@@ -5,8 +5,6 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const db = require("./lib/database");
 const cors = require("cors");
-const hammerService = require("./service/hammerService");
-const config = require("./config");
 const scheduler = require("./scheduler");
 
 // // // // // // // // // // // // // // // // // // // // // // // // //

@@ -3,13 +3,18 @@ const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocket");
 const castleService = require("./castle");
-const userService = require("./user");
+let priceService;
+let userService;
 const actionLogService = require("./actionLogService");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
 const ConflictError = require("../error/ConflictError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+setTimeout(() => {
+    priceService = require("./priceService");
+    userService = require("./user");
+}, 1000);
 
 const selectQuery = `catapult.x,
                catapult.y,
@@ -29,7 +34,7 @@ const selectQuery = `catapult.x,
  * @param {User} user
  */
 function create(catapultRequestBody, user) {
-    user.hammer -= getNextCatapultPrice(user);
+    user.hammer -= priceService.nextCatapultPrice(user.id);
     if (user.hammer < 0) {
         throw new NotEnoughHammerError("You have not enough hammer to build a catapult.");
     }
@@ -142,12 +147,4 @@ function triggerCatapultAttacks() {
     console.log("[catapultService] Triggered catapult attacks in " + (Date.now() - t1) + "ms.");
 }
 
-/**
- * @param {User} user
- * @return {number}
- */
-function getNextCatapultPrice(user) {
-    return Math.floor(castleService.getNextCastlePrice(user) * 0.35);
-}
-
-module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks, getNextCatapultPrice};
+module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks};

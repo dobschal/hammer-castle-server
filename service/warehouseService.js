@@ -1,13 +1,17 @@
 const db = require("../lib/database");
 const websocket = require("./websocket");
 const castleService = require("./castle");
-const hammerService = require("./hammerService");
-const userService = require("./user");
+let priceService;
+let userService;
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const actionLogService = require("./actionLogService");
+setTimeout(() => {
+    priceService = require("./priceService");
+    userService = require("./user");
+}, 1000);
 
 const selectQuery = `warehouse.x,
                warehouse.y,
@@ -25,7 +29,7 @@ const selectQuery = `warehouse.x,
  * @param {User} user
  */
 function create(warehouseRequestBody, user) {
-    user.hammer -= getNextWarehousePrice(user);
+    user.hammer -= priceService.nextWarehousePrice(user.id);
     if (user.hammer < 0) {
         throw new NotEnoughHammerError("You have not enough hammer to build a warehouse.");
     }
@@ -53,7 +57,7 @@ function create(warehouseRequestBody, user) {
                 SET hammer=?
                 WHERE id = ?`).run(user.hammer, user.id);
     const warehouse = getByPosition({x, y});
-    const updatedUser = userService.updateUserValues(user, undefined, getAllOfUser(user));
+    const updatedUser = userService.updateUserValues(user.id);
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
@@ -148,7 +152,7 @@ function cleanUp() {
         if (remove) {
             deleteWarehouse(w);
             const user = userService.getById(w.user_id);
-            const updatedUser = userService.updateUserValues(user, undefined, getAllOfUser(user));
+            const updatedUser = userService.updateUserValues(user.id);
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
             }
@@ -158,4 +162,17 @@ function cleanUp() {
     console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
 }
 
-module.exports = {create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse, getNextWarehousePrice};
+module.exports = {
+    create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse, getNextWarehousePrice,
+
+    /**
+     * @param {number} userId
+     * @return {number}
+     */
+    countWarehousesOfUser(userId) {
+        const {count} = db.prepare(`select count(*) as count
+                                    from warehouse
+                                    where user_id = ?`).get(userId);
+        return count;
+    }
+};

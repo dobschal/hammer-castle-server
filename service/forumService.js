@@ -1,5 +1,13 @@
 const db = require("../lib/database");
 
+const forumEntryQuery = `
+    id, 
+    category_id as categoryId, 
+    user_id as userId, 
+    content, 
+    timestamp
+`;
+
 module.exports = {
 
     /**
@@ -38,5 +46,15 @@ module.exports = {
      */
     getCategoryById(id) {
         return db.prepare("SELECT * FROM forum_category WHERE id=?").get(id);
+    },
+
+    /**
+     * @param {number} id
+     * @return {ForumCategory}
+     */
+    getEntryById(id) {
+        return db.prepare(`SELECT ${forumEntryQuery}
+                           FROM forum_entry
+                           WHERE id = ?`).get(id);
     }
 };
