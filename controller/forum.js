@@ -10,13 +10,13 @@ router.post("/category", hasUserRole(["ADMIN"]), function (req, res) {
         schema.is(requestBody, "request/UpdateCategory");
         res.send({
             success: true,
-            catapult: forumService.updateCategory(requestBody)
+            category: forumService.updateCategory(requestBody)
         });
     } else {
         schema.is(requestBody, "request/CreateCategory");
         res.send({
             success: true,
-            catapult: forumService.createCategory(requestBody)
+            category: forumService.createCategory(requestBody)
         });
     }
 });
@@ -34,6 +34,23 @@ router.delete("/category", hasUserRole(["ADMIN"]), function (req, res) {
         res.send(forumService.deleteCategory(Number(req.query.id)));
     } else {
         throw new Error("Missing id...");
+    }
+});
+
+router.post("/entry", hasUserRole(["USER"]), function (req, res) {
+    const requestBody = req.body;
+    schema.is(requestBody, "request/CreateForumEntry");
+    res.send({
+        success: true,
+        entry: forumService.createEntry(requestBody)
+    });
+});
+
+router.get("/entry", hasUserRole(["USER"]), function (req, res) {
+    if ("id" in req.query) {
+        res.send(forumService.getEntryById(Number(req.query.id)));
+    } else {
+        res.send(forumService.getAllEntries());
     }
 });
 

@@ -50,11 +50,29 @@ module.exports = {
 
     /**
      * @param {number} id
-     * @return {ForumCategory}
+     * @return {ForumEntry}
      */
     getEntryById(id) {
         return db.prepare(`SELECT ${forumEntryQuery}
                            FROM forum_entry
                            WHERE id = ?`).get(id);
+    },
+
+    /**
+     * @return {ForumEntry[]}
+     */
+    getAllEntries() {
+        return db.prepare(`SELECT ${forumEntryQuery}
+                           FROM forum_entry`).all();
+    },
+
+    /**
+     * @param {CreateForumEntryRequest} request
+     */
+    createEntry(request) {
+        const {lastInsertRowid} = db
+            .prepare("INSERT INTO forum_entry (category_id, user_id, content, timestamp) VALUES (?,?, ?, ?);")
+            .run(request.categoryId, request.userId, request.content, Date.now());
+        return this.getEntryById(lastInsertRowid);
     }
 };

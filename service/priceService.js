@@ -42,7 +42,7 @@ module.exports = {
      * @return {number}
      */
     nextCastlePrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.5);
+        return Math.floor(this.aimedHammersPerHour(userId) * 0.6);
     },
 
     /**
@@ -50,7 +50,7 @@ module.exports = {
      * @return {number}
      */
     nextCatapultPrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.2);
+        return Math.floor(this.aimedHammersPerHour(userId) * 0.3);
     },
 
     /**
@@ -58,7 +58,7 @@ module.exports = {
      * @return {number}
      */
     nextWarehousePrice(userId) {
-        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.3);
+        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.4);
         const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
         return Math.min(price1, price2);
     },
