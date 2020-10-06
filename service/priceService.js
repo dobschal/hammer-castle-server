@@ -42,7 +42,7 @@ module.exports = {
      * @return {number}
      */
     nextCastlePrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.65);
+        return Math.floor(this.aimedHammersPerHour(userId) * 0.5);
     },
 
     /**
@@ -50,7 +50,7 @@ module.exports = {
      * @return {number}
      */
     nextCatapultPrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.4);
+        return Math.floor(this.aimedHammersPerHour(userId) * 0.2);
     },
 
     /**
