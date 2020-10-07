@@ -6,6 +6,8 @@
  * @property {number} userId
  * @property {string} content
  * @property {number} timestamp
+ * @property {string} username
+ * @property {string} color
  */
 
 module.exports = {
@@ -15,6 +17,8 @@ module.exports = {
         categoryId: {type: "number"},
         content: {type: "string"},
         timestamp: {type: "number"},
+        color: {type: "string"},
+        username: {type: "string"},
         userId: {type: "number"}
     }
 };

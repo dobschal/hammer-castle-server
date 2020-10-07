@@ -1,11 +1,13 @@
 const db = require("../lib/database");
 
 const forumEntryQuery = `
-    id, 
-    category_id as categoryId, 
-    user_id as userId, 
-    content, 
-    timestamp
+    e.id, 
+    e.category_id as categoryId, 
+    e.user_id as userId, 
+    e.content, 
+    u.username,
+    u.color,
+    e.timestamp
 `;
 
 module.exports = {
@@ -54,8 +56,8 @@ module.exports = {
      */
     getEntryById(id) {
         return db.prepare(`SELECT ${forumEntryQuery}
-                           FROM forum_entry
-                           WHERE id = ?`).get(id);
+                           FROM forum_entry e JOIN user u on e.user_id = u.id
+                           WHERE e.id = ?`).get(id);
     },
 
     /**
@@ -63,16 +65,27 @@ module.exports = {
      */
     getAllEntries() {
         return db.prepare(`SELECT ${forumEntryQuery}
-                           FROM forum_entry`).all();
+                           FROM forum_entry e JOIN user u on e.user_id = u.id`).all();
     },
 
     /**
      * @param {CreateForumEntryRequest} request
+     * @param {number} userId
      */
-    createEntry(request) {
+    createEntry(request, userId) {
         const {lastInsertRowid} = db
             .prepare("INSERT INTO forum_entry (category_id, user_id, content, timestamp) VALUES (?,?, ?, ?);")
-            .run(request.categoryId, request.userId, request.content, Date.now());
+            .run(request.categoryId, userId, request.content, Date.now());
         return this.getEntryById(lastInsertRowid);
+    },
+
+    /**
+     * @param {number} categoryId
+     * @return {ForumEntry[]}
+     */
+    getEntriesByCategoryId(categoryId) {
+        return db.prepare(`SELECT ${forumEntryQuery}
+                           FROM forum_entry e JOIN user u on e.user_id = u.id
+                           WHERE e.category_id = ?`).all(categoryId);
     }
 };

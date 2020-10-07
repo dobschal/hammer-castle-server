@@ -2,18 +2,14 @@
  * @typedef CreateForumEntryRequest
  * @type {object}
  * @property {number} categoryId
- * @property {number} userId
  * @property {string} content
- * @property {number} timestamp
  */
 
 module.exports = {
     type: "object",
-    required: ["name", "description"],
+    required: ["categoryId", "content"],
     properties: {
         categoryId: {type: "number"},
-        content: {type: "string"},
-        timestamp: {type: "number"},
-        userId: {type: "number"}
+        content: {type: "string"}
     }
 };

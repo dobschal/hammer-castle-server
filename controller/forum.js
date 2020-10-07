@@ -3,6 +3,7 @@ const router = express.Router();
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const forumService = require("../service/forumService");
+const userService = require("../service/user");
 
 router.post("/category", hasUserRole(["ADMIN"]), function (req, res) {
     const requestBody = req.body;
@@ -40,14 +41,18 @@ router.delete("/category", hasUserRole(["ADMIN"]), function (req, res) {
 router.post("/entry", hasUserRole(["USER"]), function (req, res) {
     const requestBody = req.body;
     schema.is(requestBody, "request/CreateForumEntry");
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
     res.send({
         success: true,
-        entry: forumService.createEntry(requestBody)
+        entry: forumService.createEntry(requestBody, user.id)
     });
 });
 
 router.get("/entry", hasUserRole(["USER"]), function (req, res) {
-    if ("id" in req.query) {
+    if ("category_id" in req.query) {
+        res.send(forumService.getEntriesByCategoryId(Number(req.query.category_id)));
+    } else if ("id" in req.query) {
         res.send(forumService.getEntryById(Number(req.query.id)));
     } else {
         res.send(forumService.getAllEntries());
