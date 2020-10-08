@@ -17,11 +17,28 @@ router.post("/create", hasUserRole(["USER"]), function (req, res) {
     });
 });
 
+router.post("/upgrade", hasUserRole(["USER"]), function (req, res) {
+    const requestBody = req.body;
+    schema.is(requestBody, "request/UpgradeWarehouse");
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    res.send({
+        success: true,
+        warehouse: warehouseService.upgradeWarehouse(requestBody, user)
+    });
+});
+
 router.get("/price", hasUserRole(["USER"]), function (req, res) {
     const user = userService.currentUser(req);
     schema.is(user, "entity/User");
     const price = priceService.nextWarehousePrice(user.id);
     res.send({price});
+});
+
+router.get("/amount", hasUserRole(["USER"]), function (req, res) {
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    res.send({amount: warehouseService.countWarehousesOfUser(user.id)});
 });
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {

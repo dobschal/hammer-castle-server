@@ -21,6 +21,7 @@ const selectQuery = `warehouse.x,
                warehouse.castle_2_y,
                warehouse.timestamp,
                warehouse.user_id,
+               warehouse.level,
                user.color,
                user.username`;
 
@@ -51,8 +52,8 @@ function create(warehouseRequestBody, user) {
     if (getByPosition({x, y})) {
         throw new ConflictError("There is already a warehouse on that road!");
     }
-    db.prepare("INSERT INTO warehouse (x, y, castle_1_x, castle_1_y, castle_2_x, castle_2_y, user_id) VALUES (?,?,?,?,?,?,?);")
-        .run(x, y, castle1X, castle1Y, castle2X, castle2Y, user.id);
+    db.prepare("INSERT INTO warehouse (x, y, castle_1_x, castle_1_y, castle_2_x, castle_2_y, user_id, level) VALUES (?,?,?,?,?,?,?, ?);")
+        .run(x, y, castle1X, castle1Y, castle2X, castle2Y, user.id, 1);
     db.prepare(`UPDATE user
                 SET hammer=?
                 WHERE id = ?`).run(user.hammer, user.id);
@@ -165,5 +166,31 @@ module.exports = {
                                     from warehouse
                                     where user_id = ?`).get(userId);
         return count;
+    },
+
+    /**
+     * @param {UpgradeWarehouseRequest} requestBody
+     * @param {User} user
+     */
+    upgradeWarehouse(requestBody, user) {
+        user.hammer -= priceService.upgradeWarehousePrice(user.id);
+        if (user.hammer < 0) {
+            throw new NotEnoughHammerError("You have not enough hammer to upgrade a warehouse.");
+        }
+        const result = db.prepare("UPDATE warehouse SET level=level + 1 WHERE x=? AND y=? AND user_id=?").run(requestBody.x, requestBody.y, user.id);
+        if (result.changes !== 1) {
+            throw new ConflictError("Cannot upgrade warehouse.");
+        }
+        db.prepare(`UPDATE user
+                    SET hammer=?
+                    WHERE id = ?`).run(user.hammer, user.id);
+        const warehouse = getByPosition({x: requestBody.x, y: requestBody.y});
+        const updatedUser = userService.updateUserValues(user.id);
+        if (websocket.connections[user.username]) {
+            websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
+        }
+        websocket.broadcast("UPDATE_WAREHOUSE", warehouse);
+        actionLogService.save("You upgraded a warehouse at " + requestBody.x + "/" + requestBody.y + ".", user.id, user.username);
+        return warehouse;
     }
 };
