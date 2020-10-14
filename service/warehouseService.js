@@ -159,12 +159,14 @@ module.exports = {
 
     /**
      * @param {number} userId
+     * @param {number} minLevel - of warehouses to count
      * @return {number}
      */
-    countWarehousesOfUser(userId) {
+    countWarehousesOfUser(userId, minLevel = 1) {
         const {count} = db.prepare(`select count(*) as count
                                     from warehouse
-                                    where user_id = ?`).get(userId);
+                                    where user_id = ?
+                                      and level >= ?`).get(userId, minLevel);
         return count;
     },
 

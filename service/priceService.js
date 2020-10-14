@@ -68,7 +68,7 @@ module.exports = {
      * @return {number}
      */
     upgradeWarehousePrice(userId) {
-        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.3);
+        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.66);
         const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
         return Math.min(price1, price2);
     },
@@ -80,7 +80,18 @@ module.exports = {
     calculateMaxHammer(userId) {
         const realMax = this.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
         const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
-        const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId) + 1;
+        const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 1) + 1;
+        return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
+    },
+
+    /**
+     * @param {number} userId
+     * @return {number}
+     */
+    calculateMaxBeer(userId) {
+        const realMax = this.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
+        const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
+        const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 2) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
     },
 
@@ -95,6 +106,6 @@ module.exports = {
                 websocket.connections[user.username].emit("UPDATE_USER", {hammer: user.hammer});
             }
         });
-        console.log("[hammerService] Made " + sum + " hammers in: " + (Date.now() - t1) + "ms.");
+        console.log("[priceService] Made " + sum + " hammers in: " + (Date.now() - t1) + "ms.");
     }
 };

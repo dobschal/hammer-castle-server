@@ -134,7 +134,8 @@ function checkIpForRegistration(ip) {
  * @param {User} user
  */
 function claimDailyReward(user) {
-    db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=? WHERE id=?").run(user.max_hammers, Date.now(), user.id);
+    db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=?, beer = ? WHERE id=?")
+        .run(user.max_hammers, Date.now(), Math.min(user.beer + 1, user.max_beer), user.id);
     const actionLogService = require("./actionLogService");
     actionLogService.save("You claimed your daily reward and filled up your storage with hammers fro free.", user.id, user.username);
     const websocket = require("./websocket");
@@ -196,14 +197,16 @@ module.exports = {
      */
     updateUserValues(userId) {
         const maxHammers = priceService.calculateMaxHammer(userId);
+        const maxBeer = priceService.calculateMaxBeer(userId);
         const {level} = db.prepare(`select sum(c.points) as level
                                     from castle c
                                     where c.user_id = ?`).get(userId);
         db.prepare(`UPDATE user
                     SET hammer_per_minute = ?,
                         level             = ?,
-                        max_hammers       = ?
-                    WHERE id = ?`).run(level, level, maxHammers, userId);
+                        max_hammers       = ?,
+                        max_beer          = ?
+                    WHERE id = ?`).run(level, level, maxHammers, maxBeer, userId);
         return getById(userId);
     },
 

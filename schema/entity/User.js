@@ -16,6 +16,8 @@
  * @property {number} max_hammers
  * @property {number} last_active_at
  * @property {number} last_daily_reward_claim
+ * @property {number} beer
+ * @property {number} max_beer
  */
 
 module.exports = {
@@ -35,6 +37,8 @@ module.exports = {
     level: {type: "number"},
     max_hammers: {type: "number"},
     last_active_at: {type: "number"},
-    last_daily_reward_claim: {type: "number"}
+    last_daily_reward_claim: {type: "number"},
+    beer: {type: "number"},
+    max_beer: {type: "number"}
   }
 };
