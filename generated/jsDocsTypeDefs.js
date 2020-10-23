@@ -1,6 +1,19 @@
 /**
- * Auto generated type definition.
- * @typedef CatapultType
+ * @typedef Position
+ * @type {object}
+ * @property {number} x - required
+ * @property {number} y - required
+ */
+/**
+ * @typedef UserTokenBody
+ * @type {object}
+ * @property {undefined} expires - required
+ * @property {undefined} username - required
+ * @property {undefined} userRoles - required
+ * @property {undefined} id - required
+ */
+/**
+ * @typedef CatapultEntity
  * @type {object}
  * @property {number} x
  * @property {number} y
@@ -16,16 +29,14 @@
  * @property {number} chance_to_win
  */
 /**
- * Auto generated type definition.
- * @typedef ForumCategoryType
+ * @typedef ForumCategoryEntity
  * @type {object}
  * @property {number} id
  * @property {string} name
  * @property {string} description
  */
 /**
- * Auto generated type definition.
- * @typedef ForumEntryType
+ * @typedef ForumEntryEntity
  * @type {object}
  * @property {number} id
  * @property {number} categoryId
@@ -36,14 +47,26 @@
  * @property {number} userId
  */
 /**
- * Auto generated type definition.
- * @typedef UserType
+ * @typedef KnightEntity
  * @type {object}
  * @property {number} id
- * @property {string} username
+ * @property {number} x
+ * @property {number} y
+ * @property {number} goToX
+ * @property {number} goToY
+ * @property {number} arrivesAt
+ * @property {number} level
+ * @property {number} userId
+ * @property {string} name
+ */
+/**
+ * @typedef UserEntity
+ * @type {object}
+ * @property {number} id
+ * @property {string} username - required
  * @property {string} password
  * @property {string} timestamp
- * @property {string} email - required
+ * @property {string} email
  * @property {number} email_verified
  * @property {string} color
  * @property {number} startX
@@ -58,8 +81,7 @@
  * @property {number} max_beer
  */
 /**
- * Auto generated type definition.
- * @typedef WarehouseType
+ * @typedef WarehouseEntity
  * @type {object}
  * @property {number} x
  * @property {number} y
@@ -71,4 +93,129 @@
  * @property {string} timestamp
  * @property {string} color
  * @property {string} username
+ */
+/**
+ * @typedef ChangeCastleNameRequest
+ * @type {object}
+ * @property {string} name
+ * @property {number} x
+ * @property {number} y
+ */
+/**
+ * @typedef CreateCastleRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ */
+/**
+ * @typedef CreateCatapultRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ * @property {number} opponentCastleX
+ * @property {number} opponentCastleY
+ * @property {number} userCastleX
+ * @property {number} userCastleY
+ */
+/**
+ * @typedef CreateCategoryRequest
+ * @type {object}
+ * @property {string} name - required
+ * @property {string} description - required
+ */
+/**
+ * @typedef CreateForumEntryRequest
+ * @type {object}
+ * @property {number} categoryId - required
+ * @property {string} content - required
+ */
+/**
+ * @typedef CreateWarehouseRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ * @property {number} castle1X
+ * @property {number} castle1Y
+ * @property {number} castle2X
+ * @property {number} castle2Y
+ */
+/**
+ * @typedef DeleteCastleRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ */
+/**
+ * @typedef UpdateCategoryRequest
+ * @type {object}
+ * @property {number} id - required
+ * @property {string} name - required
+ * @property {string} description - required
+ */
+/**
+ * @typedef UpgradeWarehouseRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ */
+/**
+ * @typedef UserRequest
+ * @type {object}
+ * @property {string} username - required
+ * @property {string} password - required
+ * @property {string} color
+ */
+/**
+ * @typedef BlockAreaDto
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ * @property {number} size
+ * @property {string} type
+ */
+/**
+ * @typedef CastleDtoPointsPerUser
+ * @type {object}
+ */
+/**
+ * @typedef CastleDto
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ * @property {number} userId
+ * @property {number} points
+ * @property {string} color
+ * @property {string} username
+ * @property {string} name
+ * @property {CastleDtoPointsPerUser} pointsPerUser
+ */
+/**
+ * @typedef ConquerDtoCastlePointsPerUser
+ * @type {object}
+ */
+/**
+ * @typedef ConquerDtoCastle
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ * @property {number} userId
+ * @property {number} points
+ * @property {string} color
+ * @property {string} username
+ * @property {string} name
+ * @property {ConquerDtoCastlePointsPerUser} pointsPerUser
+ */
+/**
+ * @typedef ConquerDto
+ * @type {object}
+ * @property {number} userId
+ * @property {ConquerDtoCastle} castle
+ * @property {number} timestamp
+ */
+/**
+ * @typedef UserPointsDto
+ * @type {object}
+ * @property {number} userId
+ * @property {string} username
+ * @property {number} points
  */

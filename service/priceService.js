@@ -49,6 +49,17 @@ module.exports = {
      * @param {number} userId
      * @return {number}
      */
+    nextKnightPrice(userId) {
+
+        // TODO: find price calculation...
+
+        return config.KNIGHT_PRICE;
+    },
+
+    /**
+     * @param {number} userId
+     * @return {number}
+     */
     nextCatapultPrice(userId) {
         return Math.floor(this.aimedHammersPerHour(userId) * 0.2);
     },
@@ -102,10 +113,20 @@ module.exports = {
             const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
             sum += pointsToGive;
             const user = userService.giveHammers(userPoints.userId, pointsToGive);
-            if (websocket.connections[user.username]) {
-                websocket.connections[user.username].emit("UPDATE_USER", {hammer: user.hammer});
-            }
+            websocket.sendTo(user.username, "UPDATE_USER", {hammer: user.hammer});
         });
         console.log("[priceService] Made " + sum + " hammers in: " + (Date.now() - t1) + "ms.");
+    },
+
+    makeBeer() {
+        const t1 = Date.now();
+        let sum = 0;
+        castleService.getBeerPointsPerUser().forEach(userPoints => {
+            const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
+            sum += pointsToGive;
+            const user = userService.giveBeer(userPoints.userId, pointsToGive);
+            websocket.sendTo(user.username, "UPDATE_USER", {beer: user.beer});
+        });
+        console.log("[priceService] Made " + sum + " beer in: " + (Date.now() - t1) + "ms.");
     }
 };

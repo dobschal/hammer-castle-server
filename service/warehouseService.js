@@ -27,7 +27,7 @@ const selectQuery = `warehouse.x,
 
 /**
  * @param {CreateWarehouseRequest} warehouseRequestBody
- * @param {User} user
+ * @param {UserEntity} user
  */
 function create(warehouseRequestBody, user) {
     user.hammer -= priceService.nextWarehousePrice(user.id);
@@ -43,7 +43,7 @@ function create(warehouseRequestBody, user) {
         y: warehouseRequestBody.castle2Y
     });
     if (!castle1 || !castle2) {
-        throw new CastleNotFoundError("Could not found castle next to warehouse.");
+        throw new CastleNotFoundError("Could not find castle next to warehouse.");
     }
     if (user.id !== castle1.userId || user.id !== castle2.userId) {
         throw new PermissionError("You need to own the castles next to a warehouse!");
@@ -63,7 +63,7 @@ function create(warehouseRequestBody, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_WAREHOUSE", warehouse);
-    actionLogService.save("You built a warehouse at " + x + "/" + y + ".", user.id, user.username);
+    actionLogService.save("You built a warehouse.", user.id, user.username, {x,y});
     return warehouse;
 }
 
@@ -112,7 +112,7 @@ function deleteWarehouse(w) {
 }
 
 /**
- * @param {User} user
+ * @param {UserEntity} user
  * @return {Warehouse[]}
  */
 function getAllOfUser(user) {
@@ -148,7 +148,7 @@ function cleanUp() {
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
             }
-            actionLogService.save("Your warehouse got destroyed at " + w.x + "/" + w.y + ".", updatedUser.id, updatedUser.username);
+            actionLogService.save("Your warehouse got destroyed!", updatedUser.id, updatedUser.username, w);
         }
     });
     console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
@@ -172,7 +172,7 @@ module.exports = {
 
     /**
      * @param {UpgradeWarehouseRequest} requestBody
-     * @param {User} user
+     * @param {UserEntity} user
      */
     upgradeWarehouse(requestBody, user) {
         user.hammer -= priceService.upgradeWarehousePrice(user.id);
@@ -192,7 +192,7 @@ module.exports = {
             websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
         }
         websocket.broadcast("UPDATE_WAREHOUSE", warehouse);
-        actionLogService.save("You upgraded a warehouse at " + requestBody.x + "/" + requestBody.y + ".", user.id, user.username);
+        actionLogService.save("You upgraded a warehouse.", user.id, user.username, requestBody);
         return warehouse;
     }
 };

@@ -1,10 +1,3 @@
-/**
- * @typedef UpdateCategoryRequest
- * @type {object}
- * @property {number} id
- * @property {string} name
- * @property {string} description
- */
 
 module.exports = {
     type: "object",

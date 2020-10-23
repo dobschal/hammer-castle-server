@@ -31,7 +31,7 @@ const selectQuery = `catapult.x,
 
 /**
  * @param {CreateCatapultRequest} catapultRequestBody
- * @param {User} user
+ * @param {UserEntity} user
  */
 function create(catapultRequestBody, user) {
     user.hammer -= priceService.nextCatapultPrice(user.id);
@@ -47,7 +47,7 @@ function create(catapultRequestBody, user) {
         y: catapultRequestBody.userCastleY
     });
     if (!opponentCastle || !userCastle) {
-        throw new CastleNotFoundError("Could not found castle next to catapult.");
+        throw new CastleNotFoundError("Could not find castle next to catapult.");
     }
     if (user.id !== userCastle.userId) {
         throw new PermissionError("You need to own a castle next to a catapult!");
@@ -66,12 +66,13 @@ function create(catapultRequestBody, user) {
     db.prepare(`UPDATE user
                 SET hammer=?
                 WHERE id = ?`).run(user.hammer, user.id);
+    delete user.password;
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", user);
     }
     websocket.broadcast("NEW_CATAPULT", catapult);
-    actionLogService.save("You built a catapult at " + x + "/" + y + ".", user.id, user.username);
-    actionLogService.save(user.username + " has built a catapult next to you at " + catapultRequestBody.x + "/" + catapultRequestBody.y + ".", opponentCastle.userId, opponentCastle.username);
+    actionLogService.save("You built a catapult.", user.id, user.username, {x, y});
+    actionLogService.save(user.username + " has built a catapult next to you.", opponentCastle.userId, opponentCastle.username, catapultRequestBody);
     return catapult;
 }
 
@@ -121,7 +122,7 @@ function triggerCatapultAttacks() {
                 x: catapult.opponent_castle_x,
                 y: catapult.opponent_castle_y
             });
-            const result = db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(catapult.x, catapult.y, catapult.user_id);
+            db.prepare("DELETE FROM catapult WHERE x=? AND y=? AND user_id=?").run(catapult.x, catapult.y, catapult.user_id);
             websocket.broadcast("DELETE_CATAPULT", catapult);
             if (opponentsCastle && opponentsCastle.userId !== catapult.user_id) {
                 const dice = Math.random();// is still not my castle? --> no friendly shooting
@@ -130,16 +131,18 @@ function triggerCatapultAttacks() {
                     const opponentUser = userService.getById(opponentsCastle.userId);
                     castleService.deleteCastle({x: opponentsCastle.x, y: opponentsCastle.y}, opponentUser, false);
                     actionLogService.save(
-                        "Your catapult destroyed a castle of '" + opponentsCastle.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!",
+                        "Your catapult destroyed the castle '" + opponentsCastle.name + "' of '" + opponentsCastle.username + "'!!!",
                         catapult.user_id,
-                        catapult.username
+                        catapult.username,
+                        opponentsCastle
                     );
                     actionLogService.save(
-                        "Your castle '" + opponentsCastle.name + "' got destroyed by '" + catapult.username + "' at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!",
+                        "Your castle '" + opponentsCastle.name + "' got destroyed by '" + catapult.username + "'!!!",
                         opponentsCastle.userId,
-                        opponentsCastle.username);
+                        opponentsCastle.username,
+                        opponentsCastle);
                 } else {
-                    actionLogService.save("Your catapult failed at " + opponentsCastle.x + "/" + opponentsCastle.y + "!!!", catapult.user_id, catapult.username);
+                    actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle);
                 }
             }
         }

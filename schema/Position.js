@@ -1,12 +1,6 @@
-/**
- * @typedef Position
- * @type {object}
- * @property {number} x
- * @property {number} y
- */
-
 module.exports = {
     type: "object",
+    required: ["x", "y"],
     properties: {
         x: {type: "number"},
         y: {type: "number"}

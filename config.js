@@ -14,6 +14,7 @@ module.exports = {
     MAKE_HAMMER_INTERVAL: 1000 * 10,
     AVERAGE_POINTS_PER_CASTLE: 3.75, // necessary for price calculation. The higher the value, the more complicated to play.
     MAX_HAMMER_HOURS: 3, // clip after 3 hours of gathering
+    KNIGHT_PRICE: 5000,
 
     USERS_PER_IP: 3,
 

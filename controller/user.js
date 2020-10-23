@@ -23,6 +23,17 @@ router.get("/home", hasUserRole(["USER"]), function (req, res) {
   res.send({position: userService.getPlayersHome(userId)});
 });
 
+router.post("/mark-as-home", hasUserRole(["USER"]), function (req, res) {
+  const position = req.body;
+  schema.is(position, "Position");
+  const user = userService.currentUser(req);
+  schema.is(user, "entity/User");
+  res.send({
+    success: true,
+    castle: userService.markAsHome(position, user)
+  });
+});
+
 router.get("/current", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
   if (user) {

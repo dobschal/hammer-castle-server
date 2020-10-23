@@ -1,9 +1,3 @@
-/**
- * @typedef CreateCategoryRequest
- * @type {object}
- * @property {string} name
- * @property {string} description
- */
 
 module.exports = {
     type: "object",

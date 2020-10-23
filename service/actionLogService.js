@@ -7,8 +7,9 @@ module.exports = {
      * @param {string} content
      * @param {string} username
      * @param {number} user_id
+     * @param {Position} position
      */
-    save(content, user_id, username) {
+    save(content, user_id, username, position) {
         const timestamp = Date.now();
         const {lastInsertRowid: id} = db.prepare("INSERT INTO action_log (timestamp, content, user_id) VALUES (?,?,?)").run(timestamp, content, user_id);
         if (!username) {
@@ -23,7 +24,7 @@ module.exports = {
     },
 
     /**
-     * @param {User} user
+     * @param {UserEntity} user
      */
     getAllOfUser(user) {
         return db.prepare("SELECT * FROM action_log WHERE user_id=?;").all(user.id);

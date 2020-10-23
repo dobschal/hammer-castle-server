@@ -12,6 +12,13 @@ function broadcast(message, data) {
   Object.keys(websocket.connections).forEach(key => websocket.connections[key].emit(message, data));
 }
 
+
+function sendTo(username, event, data) {
+  if (websocket.connections[username]) {
+    websocket.connections[username].emit(event, data);
+  }
+}
+
 /**
  * @param {string} username
  * @return {boolean}
@@ -70,4 +77,4 @@ function init(http) {
   return websocket;
 }
 
-module.exports = {init, broadcast, isOnline, ...websocket};
+module.exports = {init, broadcast, sendTo, isOnline, ...websocket};

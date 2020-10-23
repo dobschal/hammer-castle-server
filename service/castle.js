@@ -1,7 +1,3 @@
-/**
- * @type {object}
- * @property {function} prepare
- */
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
@@ -25,7 +21,7 @@ setTimeout(() => {
 }, 1000);
 
 /**
- * @type {Conquer[]}
+ * @type {ConquerDto[]}
  */
 const runningConquers = [];
 
@@ -35,12 +31,13 @@ const castleDtoSqlQuery = `
        castle.y       as y,
        castle.name    as name,
        castle.user_id as userId,
+       castle.timestamp as timestamp,
        user.color     as color,
        user.username  as username
 `;
 
 /**
- * @param {User} user
+ * @param {UserEntity} user
  * @return {boolean}
  */
 function isFirstCastle(user) {
@@ -50,7 +47,7 @@ function isFirstCastle(user) {
 
 /**
  * @param {Position} castlePosition
- * @param {User} user
+ * @param {UserEntity} user
  * @return {CastleDto}
  */
 function create(castlePosition, user) {
@@ -95,14 +92,14 @@ function create(castlePosition, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
 
-    actionLogService.save("You built a castle at " + castlePosition.x + "/" + castlePosition.y + ".", user.id, user.username);
+    actionLogService.save("You built the castle '" + castle.name + "'.", user.id, user.username, castlePosition);
     setTimeout(() => {
         const userIdsOfNeighbors = castlesInDistance
             .map(c => c.userId)
             .filter((v, i, a) => a.indexOf(v) === i && v !== user.id);
         userIdsOfNeighbors.forEach(userId => {
             const neighborUser = userService.getById(userId);
-            actionLogService.save(user.username + " has built a castle next to you at " + castlePosition.x + "/" + castlePosition.y + ".", neighborUser.id, neighborUser.username)
+            actionLogService.save(user.username + " has built the castle '" + castle.name + "' next to you.", neighborUser.id, neighborUser.username, castlePosition)
         });
     });
     return castle;
@@ -110,7 +107,7 @@ function create(castlePosition, user) {
 
 /**
  * @param {Position} castlePosition
- * @param {User} user
+ * @param {UserEntity} user
  * @param {boolean} isSelfDelete
  * @return {CastleDto}
  */
@@ -141,7 +138,7 @@ function deleteCastle(castlePosition, user, isSelfDelete = true) {
  * @param {number} x
  * @param {number} y
  * @param {string} name
- * @param {User} user
+ * @param {UserEntity} user
  * @param {CastleDto} castle
  */
 function changeName({x, y, name}, user) {
@@ -210,7 +207,7 @@ function getAllOfUserId(userId) {
 }
 
 /**
- * @param {User} user
+ * @param {UserEntity} user
  * @return {CastleDto[]}
  */
 function getAllOfUser(user) {
@@ -250,7 +247,7 @@ function changeCastlesUser(x, y, newUserId, newPointsOfCastle) {
 }
 
 /**
- * @return {Conquer[]}
+ * @return {ConquerDto[]}
  */
 function getConquers() {
     return runningConquers;
@@ -319,7 +316,7 @@ function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
         const distanceInPixel = tool.positionDistance(newCastlePosition, castleFromDb);
         if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
             pointsOfNewCastle++;
-            const result = db.prepare(`UPDATE castle
+            db.prepare(`UPDATE castle
                                        SET points = points + 1
                                        WHERE x = ?
                                          AND y = ?`).run(castleFromDb.x, castleFromDb.y);
@@ -335,7 +332,7 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
     castles.forEach(castleFromDb => {
         const distanceInPixel = tool.positionDistance(destroyedCastlePosition, castleFromDb);
         if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
-            const result = db.prepare(`UPDATE castle
+            db.prepare(`UPDATE castle
                                        SET points = points - 1
                                        WHERE x = ?
                                          AND y = ?`).run(castleFromDb.x, castleFromDb.y);
@@ -345,6 +342,10 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
     });
 }
 
+/**
+ * @return {CastleDto[]}
+ * @private
+ */
 function _getAllCastlesWithUserPoints() {
     let castles = getAll().map(c => {
         c.pointsPerUser = {};
@@ -380,7 +381,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
             userId,
             timestamp: Date.now() + (castle.points * 1000)
         };
-        schema.is(newConquer, "dto/ConquerDto");
+        schema.is(newConquer, "dto/Conquer");
         runningConquers.push(newConquer);
         websocket.broadcast("NEW_CONQUER", newConquer);
     } else {
@@ -397,7 +398,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
                 const involvedUsers = [castle.userId, userId];
 
                 const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId, newPointsOfCastle);
-                schema.is(exchangedCastle, "dto/CastleDto");
+                schema.is(exchangedCastle, "dto/Castle");
 
                 involvedUsers.forEach((userId) => {
                     const user = userService.getById(userId);
@@ -420,7 +421,6 @@ module.exports = {
     create,
     deleteCastle,
     getAll,
-    getCastlesInDistance,
     getCastlesFromTo,
     changeName,
     getConquers,
@@ -447,6 +447,17 @@ module.exports = {
         return db.prepare(`select u.id as userId, u.username as username, sum(c.points) as points
                            from castle c
                                     join user u on u.id = c.user_id
+                           group by u.id`).all();
+    },
+
+    /**
+     * @return {UserPointsDto[]}
+     */
+    getBeerPointsPerUser() {
+        return db.prepare(`select u.id as userId, u.username as username, sum(c.points) as points
+                           from castle c
+                                    join user u on u.id = c.user_id
+                           where c.points > 4
                            group by u.id`).all();
     }
 };

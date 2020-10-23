@@ -1,6 +1,6 @@
 module.exports = {
     type: "object",
-    required: ["email"],
+    required: ["username"],
     properties: {
         id: {type: "number"},
         username: {type: "string"},

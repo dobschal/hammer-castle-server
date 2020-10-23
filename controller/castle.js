@@ -57,7 +57,6 @@ setInterval(() => {
 router.get("/", hasUserRole(["USER"]), function (req, res) {
   if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
     const t1 = Date.now();
-    console.log("[castle] Get Castles in area: ", req.query);
     res.send(castleService.getCastlesFromTo(
         Number(req.query.fromX),
         Number(req.query.fromY),

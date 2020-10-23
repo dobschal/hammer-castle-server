@@ -6,13 +6,17 @@ const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
 const securityService = require("./security");
 const FraudError = require("../error/FraudError");
-let priceService;
+const CastleNotFoundError = require("../error/CastleNotFoundError");
+const PermissionError = require("../error/PermissionError");
+let priceService, castleService, websocket;
 setTimeout(() => {
     priceService = require("./priceService");
+    castleService = require("./castle");
+    websocket = require("./websocket");
 }, 1000);
 
 /**
- * @return {User}
+ * @return {UserEntity}
  */
 function currentUser(req) {
     const tokenBody = securityService.getTokenBody(req);
@@ -22,8 +26,8 @@ function currentUser(req) {
 
 
 /**
- * @param tokenBody
- * @return {User}
+ * @param {UserTokenBody} tokenBody
+ * @return {UserEntity}
  */
 function getUserFromTokenBody(tokenBody) {
     return db.prepare(`SELECT *
@@ -50,7 +54,7 @@ function create({username, password, color}, ip) {
 
 /**
  * @param {number} userId
- * @return {User}
+ * @return {UserEntity}
  */
 function getById(userId) {
     return db.prepare(`SELECT *
@@ -131,13 +135,20 @@ function checkIpForRegistration(ip) {
 }
 
 /**
- * @param {User} user
+ * @param {UserEntity} user
  */
 function claimDailyReward(user) {
     db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=?, beer = ? WHERE id=?")
-        .run(user.max_hammers, Date.now(), Math.min(user.beer + 1, user.max_beer), user.id);
+        .run(user.max_hammers, Date.now(), Math.min(user.beer + 5, user.max_beer), user.id);
     const actionLogService = require("./actionLogService");
-    actionLogService.save("You claimed your daily reward and filled up your storage with hammers fro free.", user.id, user.username);
+    actionLogService.save(
+        "You claimed your daily reward and filled up your storage with hammers for free.",
+        user.id,
+        user.username,
+        {
+            x: user.startX,
+            y: user.startY
+        });
     const websocket = require("./websocket");
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", {
@@ -179,7 +190,7 @@ module.exports = {
     /**
      * @param {number} userId
      * @param {number} amountOfHammers
-     * @return {User}
+     * @return {UserEntity}
      */
     giveHammers(userId, amountOfHammers) {
         const user = getById(userId);
@@ -193,7 +204,22 @@ module.exports = {
 
     /**
      * @param {number} userId
-     * @return {User} - updated one
+     * @param {number} amountOfBeer
+     * @return {UserEntity}
+     */
+    giveBeer(userId, amountOfBeer) {
+        const user = getById(userId);
+        if (user.beer > user.max_beer) return user;
+        user.beer = Math.min(user.beer + Math.max(1, amountOfBeer), user.max_beer);
+        db.prepare(`UPDATE user
+                    SET beer = ?
+                    WHERE id = ?`).run(user.beer, userId);
+        return user;
+    },
+
+    /**
+     * @param {number} userId
+     * @return {UserEntity} - updated one
      */
     updateUserValues(userId) {
         const maxHammers = priceService.calculateMaxHammer(userId);
@@ -224,5 +250,21 @@ module.exports = {
     checkIpForRegistration,
     checkIpForLogin,
     claimDailyReward,
-    getPlayersHome
+    getPlayersHome,
+
+    /**
+     * @param {Position} position
+     * @param {UserEntity} user
+     */
+    markAsHome(position, user) {
+        const castle = castleService.getByPosition(position);
+        if (!castle)
+            throw new CastleNotFoundError("Could not find castle.");
+        if (user.id !== castle.userId)
+            throw new PermissionError("You need to own a castle!");
+        const {changes} = db.prepare("UPDATE user SET startX=?, startY=? WHERE id=?").run(position.x, position.y, user.id);
+        if (changes > 0) {
+            websocket.sendTo(user.username, "UPDATE_USER", {startX: position.x, startY: position.y});
+        }
+    }
 };

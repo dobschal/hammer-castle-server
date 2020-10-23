@@ -1,9 +1,3 @@
-/**
- * @typedef UpgradeWarehouseRequest
- * @type {object}
- * @property {number} x
- * @property {number} y
- */
 
 module.exports = {
     type: "object",

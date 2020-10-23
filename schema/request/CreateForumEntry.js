@@ -1,9 +1,3 @@
-/**
- * @typedef CreateForumEntryRequest
- * @type {object}
- * @property {number} categoryId
- * @property {string} content
- */
 
 module.exports = {
     type: "object",

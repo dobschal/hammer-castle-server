@@ -1,5 +1,6 @@
 module.exports = {
   type: "object",
+  required: ["expires", "username", "userRoles", "id"],
   properties: {
     expires: "number",
     username: "string",
