@@ -187,6 +187,18 @@ module.exports = {
     currentUser,
     getUserFromTokenBody,
 
+    updateMany(keys, users) {
+        keys = keys.map(key => `${key} = @${key}`);
+        const sqlQuery = `UPDATE user SET ${keys.join(", ")} WHERE id = @id;`;
+        const update = db.prepare(sqlQuery);
+
+        const transact = db.transaction((users) => {
+            for (const user of users) update.run(user);
+        });
+
+        transact(users);
+    },
+
     /**
      * @param {number} userId
      * @param {number} amountOfHammers

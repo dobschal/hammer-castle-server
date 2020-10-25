@@ -3,12 +3,14 @@ const priceService = require("./service/priceService");
 const castleService = require("./service/castle");
 const catapultService = require("./service/catapultService");
 const warehouseService = require("./service/warehouseService");
+const knightService = require("./service/knightService");
 const userService = require("./service/user");
 const config = require("./config");
 
 module.exports = {
     run: function () {
         setInterval(castleService.detectCastleConquer, config.DETECT_CONQUER_INTERVAL);
+        setInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);
         setInterval(castleService.castlePointsCleanUp, config.CASTLE_CLEAN_UP_INTERVAL);
         setInterval(userService.cleanUp.bind(userService), config.USER_CLEAN_UP_INTERVAL);
         setInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);

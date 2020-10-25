@@ -10,7 +10,7 @@ setTimeout(() => {
 
 const updatesPerMinute = 60000 / config.MAKE_HAMMER_INTERVAL;
 
-module.exports = {
+const self = {
 
     /**
      * @param {number} userId
@@ -42,7 +42,7 @@ module.exports = {
      * @return {number}
      */
     nextCastlePrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.6);
+        return Math.floor(self.aimedHammersPerHour(userId) * 0.6);
     },
 
     /**
@@ -61,7 +61,7 @@ module.exports = {
      * @return {number}
      */
     nextCatapultPrice(userId) {
-        return Math.floor(this.aimedHammersPerHour(userId) * 0.2);
+        return Math.floor(self.aimedHammersPerHour(userId) * 0.2);
     },
 
     /**
@@ -69,7 +69,7 @@ module.exports = {
      * @return {number}
      */
     nextWarehousePrice(userId) {
-        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.3);
+        const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.3);
         const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
         return Math.min(price1, price2);
     },
@@ -79,7 +79,7 @@ module.exports = {
      * @return {number}
      */
     upgradeWarehousePrice(userId) {
-        const price1 = Math.floor(this.aimedHammersPerHour(userId) * 0.66);
+        const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.66);
         const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
         return Math.min(price1, price2);
     },
@@ -89,7 +89,7 @@ module.exports = {
      * @return {number}
      */
     calculateMaxHammer(userId) {
-        const realMax = this.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
+        const realMax = self.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
         const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 1) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
@@ -100,7 +100,7 @@ module.exports = {
      * @return {number}
      */
     calculateMaxBeer(userId) {
-        const realMax = this.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
+        const realMax = self.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
         const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 2) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
@@ -130,3 +130,5 @@ module.exports = {
         console.log("[priceService] Made " + sum + " beer in: " + (Date.now() - t1) + "ms.");
     }
 };
+
+module.exports = self;
