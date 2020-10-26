@@ -361,7 +361,7 @@ function _getAllCastlesWithUserPoints() {
                          sum(k.level) as knightLevels,
                          k.userId     as knightUserId
                   from castle c
-                           join knight k on c.x = k.x and c.y = k.y
+                           left join knight k on c.x = k.x and c.y = k.y
                   group by c.x, c.y`)
         .all()
         .map(c => {
