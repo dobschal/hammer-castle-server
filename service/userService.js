@@ -254,12 +254,20 @@ module.exports = {
 
     cleanUp() {
         const t1 = Date.now();
-        const users = db.prepare(`select *
-                                  from user`).all();
-        users.forEach(user => {
-            this.updateUserValues(user.id);
-        });
-        console.log("[user] Cleaned up " + users.length + " user in " + (Date.now() - t1) + "ms.");
+        const usersToUpdate = [];
+        db.prepare("select u.id as userId, sum(c.points) as level, COUNT(c.points) as castlesCount from user u join castle c on u.id = c.user_id group by u.id")
+            .all()
+            .forEach(({userId, level, castlesCount}) => {
+                usersToUpdate.push({
+                    id: userId,
+                    hammer_per_minute: level,
+                    level: level,
+                    max_hammers: priceService.calculateMaxHammer(userId, castlesCount),
+                    max_beer: priceService.calculateMaxBeer(userId, castlesCount)
+                });
+            });
+        self.updateMany(["hammer_per_minute", "level", "max_hammers", "max_beer"], usersToUpdate);
+        console.log("[user] Cleaned up " + usersToUpdate.length + " user in " + (Date.now() - t1) + "ms.");
     },
 
     getRanking,

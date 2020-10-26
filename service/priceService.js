@@ -14,10 +14,11 @@ const self = {
 
     /**
      * @param {number} userId
+     * @param {number} castlesCount
      * @return {number}
      */
-    aimedHammersPerHour(userId) {
-        const amountOfCastles = castleService.countCastlesOfUser(userId);
+    aimedHammersPerHour(userId, castlesCount) {
+        const amountOfCastles = castlesCount || castleService.countCastlesOfUser(userId);
         switch (amountOfCastles) {
             case 0:
                 return 0;
@@ -86,22 +87,26 @@ const self = {
 
     /**
      * @param {number} userId
+     * @param {number} castlesCount
      * @return {number}
      */
-    calculateMaxHammer(userId) {
-        const realMax = self.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
-        const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
+    calculateMaxHammer(userId, castlesCount) {
+        castlesCount = castlesCount || castleService.countCastlesOfUser(userId);
+        const realMax = self.aimedHammersPerHour(userId, castlesCount) * config.MAX_HAMMER_HOURS;
+        const maxPossibleAmountOfWarehouses = (castlesCount - 1) * 2 - 1;
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 1) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
     },
 
     /**
      * @param {number} userId
+     * @param {number} castlesCount
      * @return {number}
      */
-    calculateMaxBeer(userId) {
-        const realMax = self.aimedHammersPerHour(userId) * config.MAX_HAMMER_HOURS;
-        const maxPossibleAmountOfWarehouses = (castleService.countCastlesOfUser(userId) - 1) * 2 - 1;
+    calculateMaxBeer(userId, castlesCount) {
+        castlesCount = castlesCount || castleService.countCastlesOfUser(userId);
+        const realMax = self.aimedHammersPerHour(userId, castlesCount) * config.MAX_HAMMER_HOURS;
+        const maxPossibleAmountOfWarehouses = (castlesCount - 1) * 2 - 1;
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 2) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
     },
