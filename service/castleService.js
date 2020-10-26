@@ -371,7 +371,6 @@ function _getAllCastlesWithUserPoints() {
             }
             return c;
         });
-
     for (let i = 0; i < castles.length; i++) {
         const c1 = castles[i];
         for (let j = i + 1; j < castles.length; j++) {
