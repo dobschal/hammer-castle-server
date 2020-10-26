@@ -383,7 +383,6 @@ function _getAllCastlesWithUserPoints() {
             }
         }
     }
-
     return castles;
 }
 
