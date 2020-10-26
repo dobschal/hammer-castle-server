@@ -1,6 +1,6 @@
 const UnauthorisedError = require("../error/UnauthorisedError");
 const schema = require("../lib/schema");
-const securityService = require("../service/security");
+const securityService = require("../service/securityService");
 
 module.exports = function hasUserRole(allowedRoles = []) {
   return function(req, res, next) {

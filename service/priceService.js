@@ -1,11 +1,11 @@
-const castleService = require("./castle");
+const castleService = require("./castleService");
 const warehouseService = require("./warehouseService");
 const config = require("../config");
 let userService;
-const websocket = require("./websocket");
+const websocket = require("./websocketService");
 
 setTimeout(() => {
-    userService = require("./user");
+    userService = require("./userService");
 }, 1000);
 
 const updatesPerMinute = 60000 / config.MAKE_HAMMER_INTERVAL;

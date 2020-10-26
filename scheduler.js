@@ -1,10 +1,10 @@
 const statsService = require("./service/statsService");
 const priceService = require("./service/priceService");
-const castleService = require("./service/castle");
+const castleService = require("./service/castleService");
 const catapultService = require("./service/catapultService");
 const warehouseService = require("./service/warehouseService");
 const knightService = require("./service/knightService");
-const userService = require("./service/user");
+const userService = require("./service/userService");
 const config = require("./config");
 
 module.exports = {

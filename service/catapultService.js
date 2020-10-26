@@ -1,8 +1,8 @@
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
-const websocket = require("./websocket");
-const castleService = require("./castle");
+const websocket = require("./websocketService");
+const castleService = require("./castleService");
 let priceService;
 let userService;
 const actionLogService = require("./actionLogService");
@@ -13,7 +13,7 @@ const ConflictError = require("../error/ConflictError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 setTimeout(() => {
     priceService = require("./priceService");
-    userService = require("./user");
+    userService = require("./userService");
 }, 1000);
 
 const selectQuery = `catapult.x,

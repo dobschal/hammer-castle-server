@@ -3,7 +3,7 @@ const router = express.Router();
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const catapultService = require("../service/catapultService");
-const userService = require("../service/user");
+const userService = require("../service/userService");
 const priceService = require("../service/priceService");
 
 router.post("/create", hasUserRole(["USER"]), function (req, res) {

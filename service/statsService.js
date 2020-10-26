@@ -1,5 +1,5 @@
 const db = require("../lib/database");
-const userService = require("./user");
+const userService = require("./userService");
 
 module.exports = {
     /**

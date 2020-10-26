@@ -1,6 +1,6 @@
 const db = require("../lib/database");
-const websocket = require("./websocket");
-const castleService = require("./castle");
+const websocket = require("./websocketService");
+const castleService = require("./castleService");
 let priceService;
 let userService;
 const CastleNotFoundError = require("../error/CastleNotFoundError");
@@ -10,7 +10,7 @@ const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const actionLogService = require("./actionLogService");
 setTimeout(() => {
     priceService = require("./priceService");
-    userService = require("./user");
+    userService = require("./userService");
 }, 1000);
 
 const selectQuery = `warehouse.x,

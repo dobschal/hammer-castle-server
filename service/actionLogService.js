@@ -1,4 +1,4 @@
-const websocket = require("./websocket");
+const websocket = require("./websocketService");
 const db = require("../lib/database");
 
 module.exports = {

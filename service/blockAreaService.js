@@ -1,7 +1,7 @@
 const config = require("../config");
 const tool = require("../lib/tool");
 const db = require("../lib/database");
-const websocket = require("./websocket");
+const websocket = require("./websocketService");
 
 /**
  * @param {Position} position

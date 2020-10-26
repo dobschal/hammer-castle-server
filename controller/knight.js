@@ -3,7 +3,7 @@ const router = express.Router();
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const knightService = require("../service/knightService");
-const userService = require("../service/user");
+const userService = require("../service/userService");
 const priceService = require("../service/priceService");
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {

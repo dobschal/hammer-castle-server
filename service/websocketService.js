@@ -1,6 +1,6 @@
 const security = require("../lib/security");
 const schema = require("../lib/schema");
-const userService = require("../service/user");
+const userService = require("./userService");
 const db = require("../lib/database");
 
 const websocket = {

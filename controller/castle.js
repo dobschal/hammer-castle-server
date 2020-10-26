@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
-const castleService = require("../service/castle");
-const userService = require("../service/user");
+const castleService = require("../service/castleService");
+const userService = require("../service/userService");
 const priceService = require("../service/priceService");
 
 router.post("/create", hasUserRole(["USER"]), function (req, res) {

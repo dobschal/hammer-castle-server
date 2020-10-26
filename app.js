@@ -70,7 +70,7 @@ files.forEach(function (filename) {
 
 //  Websocket
 const http = require("http").createServer(app);
-const {connections} = require("./service/websocket").init(http);
+const {connections} = require("./service/websocketService").init(http);
 setInterval(() => {
   console.log("[app] Websocket connections: ", Object.keys(connections).length);
   Object.keys(connections).forEach(username => {

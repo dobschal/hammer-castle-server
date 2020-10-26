@@ -1,8 +1,8 @@
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
-const websocket = require("./websocket");
-const blockAreaService = require("./blockArea");
+const websocket = require("./websocketService");
+const blockAreaService = require("./blockAreaService");
 const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 const CastleMinDistanceError = require("../error/CastleMinDistanceError");
@@ -17,7 +17,7 @@ const actionLogService = require("./actionLogService");
 
 setTimeout(() => {
     priceService = require("./priceService");
-    userService = require("./user");
+    userService = require("./userService");
 }, 1000);
 
 /**
@@ -264,12 +264,18 @@ function getByPosition(position) {
 function castlePointsCleanUp() {
     const t1 = Date.now();
     const castles = _getAllCastlesWithUserPoints();
+    const castlesToCleanUp = [];
     castles.forEach(c => {
+        if (c.points === 0 && !c.pointsPerUser[c.userId]) return;
         if (c.pointsPerUser[c.userId] !== c.points) {
-            db.prepare("UPDATE castle SET points=? WHERE x=? AND y=?;").run(c.pointsPerUser[c.userId] || 0, c.x, c.y);
-            console.log("[castle] Updated castles points, were not correct: ", c);
+            castlesToCleanUp.push({
+                points: c.pointsPerUser[c.userId] || 0,
+                x: c.x,
+                y: c.y
+            });
         }
     });
+    self.updateMany(["points"], castlesToCleanUp);
     console.log("[castle] Cleaned up castles in " + (Date.now() - t1) + "ms.");
 }
 
@@ -347,6 +353,9 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
  * @private
  */
 function _getAllCastlesWithUserPoints() {
+
+    //  TODO: Add extra points for knights...
+
     let castles = getAll().map(c => {
         c.pointsPerUser = {};
         return c;
@@ -417,7 +426,7 @@ function _handleCastleConquer(castle, userId, newPointsOfCastle) {
 }
 
 
-module.exports = {
+const self = {
     create,
     deleteCastle,
     getAll,
@@ -428,6 +437,21 @@ module.exports = {
     castlePointsCleanUp,
     detectCastleConquer,
     getByPosition,
+
+    /**
+     *
+     * @param {string[]} keys
+     * @param castles
+     */
+    updateMany(keys, castles) {
+        keys = keys.map(key => `${key} = @${key}`);
+        const sqlQuery = `UPDATE castle SET ${keys.join(", ")} WHERE x = @x AND y = @y;`;
+        const update = db.prepare(sqlQuery);
+        const transact = db.transaction((castles) => {
+            for (const castle of castles) update.run(castle);
+        });
+        transact(castles);
+    },
 
     /**
      * @param {number} userId
@@ -461,3 +485,5 @@ module.exports = {
                            group by u.id`).all();
     }
 };
+
+module.exports = self;

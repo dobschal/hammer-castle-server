@@ -3,7 +3,7 @@ const router = express.Router();
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const forumService = require("../service/forumService");
-const userService = require("../service/user");
+const userService = require("../service/userService");
 
 router.post("/category", hasUserRole(["ADMIN"]), function (req, res) {
     const requestBody = req.body;

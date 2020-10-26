@@ -4,15 +4,15 @@ const schema = require("../lib/schema");
 const ConflictError = require("../error/ConflictError");
 const UnauthorisedError = require("../error/UnauthorisedError");
 const config = require("../config");
-const securityService = require("./security");
+const securityService = require("./securityService");
 const FraudError = require("../error/FraudError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 let priceService, castleService, websocket;
 setTimeout(() => {
     priceService = require("./priceService");
-    castleService = require("./castle");
-    websocket = require("./websocket");
+    castleService = require("./castleService");
+    websocket = require("./websocketService");
 }, 1000);
 
 /**
@@ -149,7 +149,7 @@ function claimDailyReward(user) {
             x: user.startX,
             y: user.startY
         });
-    const websocket = require("./websocket");
+    const websocket = require("./websocketService");
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", {
             hammer: user.max_hammers,
@@ -187,6 +187,10 @@ module.exports = {
     currentUser,
     getUserFromTokenBody,
 
+    /**
+     * @param {string[]} keys
+     * @param {{id: number}[]} users
+     */
     updateMany(keys, users) {
         keys = keys.map(key => `${key} = @${key}`);
         const sqlQuery = `UPDATE user SET ${keys.join(", ")} WHERE id = @id;`;

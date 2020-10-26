@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const userService = require("../service/user");
+const userService = require("../service/userService");
 const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
-const websocket = require("../service/websocket");
+const websocket = require("../service/websocketService");
 const requestIp = require('request-ip');
 
 router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
