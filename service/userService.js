@@ -179,7 +179,7 @@ function getPlayersHome(userId) {
     return db.prepare("SELECT x, y FROM castle WHERE user_id=? ORDER BY timestamp DESC LIMIT 1").get(userId) || {x: 0, y: 0};
 }
 
-module.exports = {
+const self = {
     getById,
     create,
     authenticate,
@@ -292,3 +292,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = self;

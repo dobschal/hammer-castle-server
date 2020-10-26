@@ -353,13 +353,25 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
  * @private
  */
 function _getAllCastlesWithUserPoints() {
+    let castles = db
+        .prepare(`select c.x          as x,
+                         c.y          as y,
+                         c.user_id    as userId,
+                         c.points     as points,
+                         sum(k.level) as knightLevels,
+                         k.userId     as knightUserId
+                  from castle c
+                           join knight k on c.x = k.x and c.y = k.y
+                  group by c.x, c.y`)
+        .all()
+        .map(c => {
+            c.pointsPerUser = {};
+            if (c.knightUserId && c.knightLevels) {
+                c.pointsPerUser[c.userId] = c.knightUserId === c.userId ? 1 : -1;
+            }
+            return c;
+        });
 
-    //  TODO: Add extra points for knights...
-
-    let castles = getAll().map(c => {
-        c.pointsPerUser = {};
-        return c;
-    });
     for (let i = 0; i < castles.length; i++) {
         const c1 = castles[i];
         for (let j = i + 1; j < castles.length; j++) {
