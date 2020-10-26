@@ -35,6 +35,13 @@ router.get("/price", hasUserRole(["USER"]), function (req, res) {
     res.send({price});
 });
 
+router.get("/upgrade-price", hasUserRole(["USER"]), function (req, res) {
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    const price = priceService.upgradeWarehousePrice(user.id);
+    res.send({price});
+});
+
 router.get("/amount", hasUserRole(["USER"]), function (req, res) {
     const user = userService.currentUser(req);
     schema.is(user, "entity/User");
