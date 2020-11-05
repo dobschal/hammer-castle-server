@@ -6,6 +6,7 @@ module.exports = {
     BLOCK_AREA_SIZE: 200, // Radius!, should be max castle distance
     DETECT_CONQUER_INTERVAL: 1000 * 2,
     CHARGE_KNIGHTS_INTERVAL: 1000 * 30,
+    MOVE_KNIGHTS_INTERVAL: 1000 * 5,
     DETECT_CATAPULT_ATTACK_INTERVAL: 1000 * 2,
     CASTLE_CLEAN_UP_INTERVAL: 1000 * 60,
     WAREHOUSE_CLEAN_UP_INTERVAL: 1000 * 2,
@@ -17,6 +18,7 @@ module.exports = {
     MAX_HAMMER_HOURS: 3, // clip after 3 hours of gathering
     KNIGHT_PRICE: 5000,
     KNIGHT_BEER_COST_PER_LEVEL: 5,
+    KNIGHT_MOVE_DURATION: 1000 * 60 * 15,
 
     USERS_PER_IP: 3,
 

@@ -146,6 +146,13 @@
  * @property {number} y
  */
 /**
+ * @typedef MoveKnightRequest
+ * @type {object}
+ * @property {number} x - required
+ * @property {number} y - required
+ * @property {number} knightId - required
+ */
+/**
  * @typedef UpdateCategoryRequest
  * @type {object}
  * @property {number} id - required

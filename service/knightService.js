@@ -8,6 +8,7 @@ const NotEnoughHammerError = require("../error/NotEnoughHammerError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
+const KnightNotFoundError = require("../error/KnightNotFoundError");
 const config = require("../config");
 
 const self = {
@@ -142,6 +143,65 @@ const self = {
                            from knight k
                                     join user u on u.id = k.userId
                            group by u.id`).all();
+    },
+
+    /**
+     * @param {MoveKnightRequest} requestBody
+     * @param {UserEntity} user
+     */
+    move(requestBody, user) {
+        const knight = self.getById(requestBody.knightId);
+        if (!knight) throw new KnightNotFoundError("Didn't find the knight to move...");
+        if (knight.userId !== user.id) throw new PermissionError("Sorry, you need to own the knight you want to move...");
+        knight.goToX = requestBody.x;
+        knight.goToY = requestBody.y;
+        knight.arrivesAt = Date.now() + config.KNIGHT_MOVE_DURATION;
+        const {changes} = db.prepare(`update knight
+                                      set goToX=@goToX,
+                                          goToY=@goToY,
+                                          arrivesAt=@arrivesAt
+                                      where id = @id`).run(knight);
+        if (changes !== 1) throw new Error("[knightService] Update knight failed.");
+        websocket.broadcast("UPDATE_KNIGHT", knight);
+    },
+
+    moveKnights() {
+        const knights = db.prepare("SELECT knight.*, user.username, user.color FROM knight JOIN user ON knight.userId = user.id WHERE goToX NOT NULL AND goToY NOT NULL AND arrivesAt NOT NULL;").all();
+        const knightsToUpdate = [];
+        knights.forEach(
+            /**
+             *  @param {KnightEntity} knight
+             */
+            knight => {
+                if (knight.arrivesAt < Date.now()) {
+                    knight.x = knight.goToX;
+                    knight.y = knight.goToY;
+                    knight.arrivesAt = undefined;
+                    knight.goToX = undefined;
+                    knight.goToY = undefined;
+                    knightsToUpdate.push(knight);
+                    setTimeout(() => {
+                        websocket.broadcast("UPDATE_KNIGHT", knight);
+                    });
+                }
+            });
+        self.updateMany(["x", "y", "goToX", "goToY", "arrivesAt"], knightsToUpdate);
+    },
+
+    /**
+     * @param {string[]} keys
+     * @param {KnightEntity[]} knights
+     */
+    updateMany(keys, knights) {
+        keys = keys.map(key => `${key} = @${key}`);
+        const sqlQuery = `UPDATE knight SET ${keys.join(", ")} WHERE id = @id;`;
+        const update = db.prepare(sqlQuery);
+
+        const transact = db.transaction((knights) => {
+            for (const knight of knights) update.run(knight);
+        });
+
+        transact(knights);
     }
 };
 

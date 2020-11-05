@@ -32,7 +32,18 @@ router.post("/create", hasUserRole(["USER"]), function (req, res) {
     schema.is(user, "entity/User");
     res.send({
         success: true,
-        warehouse: knightService.create(requestBody, user)
+        knight: knightService.create(requestBody, user)
+    });
+});
+
+router.post("/move", hasUserRole(["USER"]), function (req, res) {
+    const requestBody = req.body;
+    schema.is(requestBody, "request/MoveKnight");
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    res.send({
+        success: true,
+        knight: knightService.move(requestBody, user)
     });
 });
 
