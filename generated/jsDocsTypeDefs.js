@@ -47,6 +47,13 @@
  * @property {number} userId
  */
 /**
+ * @typedef FriendEntity
+ * @type {object}
+ * @property {number} id
+ * @property {number} userAId
+ * @property {number} userBId
+ */
+/**
  * @typedef KnightEntity
  * @type {object}
  * @property {number} id
@@ -92,6 +99,11 @@
  * @property {number} user_id
  * @property {string} timestamp
  * @property {string} color
+ * @property {string} username
+ */
+/**
+ * @typedef AddFriendRequest
+ * @type {object}
  * @property {string} username
  */
 /**
@@ -144,6 +156,11 @@
  * @type {object}
  * @property {number} x
  * @property {number} y
+ */
+/**
+ * @typedef FindUserRequest
+ * @type {object}
+ * @property {string} query
  */
 /**
  * @typedef MoveKnightRequest
