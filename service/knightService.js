@@ -92,6 +92,7 @@ const self = {
         return db.prepare("SELECT knight.*, user.username, user.color FROM knight JOIN user ON knight.userId = user.id;").all();
     },
 
+    // Runs every minute...
     chargeKnights() {
         const usersToUpdate = [];
         const knightsToDelete = [];
@@ -143,6 +144,21 @@ const self = {
                            from knight k
                                     join user u on u.id = k.userId
                            group by u.id`).all();
+    },
+
+    /**
+     * @return {{userId: number, username: string, summedKnightLevels: number, beer: number, knightId: number}[]}
+     */
+    getSummedKnightLevels(userId) {
+        return db.prepare(`select u.id         as userId,
+                                  u.username   as username,
+                                  u.beer       as beer,
+                                  sum(k.level) as summedKnightLevels,
+                                  k.id         as knightId
+                           from knight k
+                                    join user u on u.id = k.userId
+                           where u.id = ?
+                           group by u.id`).all(userId);
     },
 
     /**

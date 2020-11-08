@@ -488,11 +488,29 @@ const self = {
      * @return {UserPointsDto[]}
      */
     getBeerPointsPerUser() {
-        return db.prepare(`select u.id as userId, u.username as username, sum(c.points) as points
+        return db.prepare(`select u.id          as userId,
+                                  u.username    as username,
+                                  sum(c.points) as points
                            from castle c
                                     join user u on u.id = c.user_id
                            where c.points > 4
                            group by u.id`).all();
+    },
+
+
+    /**
+     * @param {number} userId
+     * @return {UserPointsDto[]}
+     */
+    getBeerPoints(userId) {
+        return db.prepare(`select u.id          as userId,
+                                  u.username    as username,
+                                  sum(c.points) as points
+                           from castle c
+                                    join user u on u.id = c.user_id
+                           where c.points > 4
+                             and u.id = ?
+                           group by u.id`).all(userId);
     }
 };
 

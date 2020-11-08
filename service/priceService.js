@@ -8,7 +8,7 @@ setTimeout(() => {
     userService = require("./userService");
 }, 1000);
 
-const updatesPerMinute = 60000 / config.MAKE_HAMMER_INTERVAL;
+const updatesPerMinute = 60000 / config.MAKE_RESOURCES_INTERVAL;
 
 const self = {
 
@@ -71,7 +71,7 @@ const self = {
      */
     nextWarehousePrice(userId) {
         const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.3);
-        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
+        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_FARM_RESOURCES_HOURS : 0);
         return Math.min(price1, price2);
     },
 
@@ -81,7 +81,7 @@ const self = {
      */
     upgradeWarehousePrice(userId) {
         const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.66);
-        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_HAMMER_HOURS : 0);
+        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_FARM_RESOURCES_HOURS : 0);
         return Math.min(price1, price2);
     },
 
@@ -92,23 +92,20 @@ const self = {
      */
     calculateMaxHammer(userId, castlesCount) {
         castlesCount = castlesCount || castleService.countCastlesOfUser(userId);
-        const realMax = self.aimedHammersPerHour(userId, castlesCount) * config.MAX_HAMMER_HOURS;
+        const realMax = self.aimedHammersPerHour(userId, castlesCount) * config.MAX_FARM_RESOURCES_HOURS;
         const maxPossibleAmountOfWarehouses = (castlesCount - 1) * 2 - 1;
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 1) + 1;
         return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
     },
 
     /**
+     * Each warehouse level 2 can store 100 beer...
      * @param {number} userId
-     * @param {number} castlesCount
      * @return {number}
      */
-    calculateMaxBeer(userId, castlesCount) {
-        castlesCount = castlesCount || castleService.countCastlesOfUser(userId);
-        const realMax = self.aimedHammersPerHour(userId, castlesCount) * config.MAX_HAMMER_HOURS;
-        const maxPossibleAmountOfWarehouses = (castlesCount - 1) * 2 - 1;
+    calculateMaxBeer(userId) {
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 2) + 1;
-        return Math.floor(amountOfWarehouses / maxPossibleAmountOfWarehouses * realMax);
+        return amountOfWarehouses * 100;
     },
 
     makeHammers() {

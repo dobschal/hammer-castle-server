@@ -19,8 +19,8 @@ module.exports = {
 
         setInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);
 
-        setInterval(priceService.makeHammers, config.MAKE_HAMMER_INTERVAL);
-        setInterval(priceService.makeBeer, config.MAKE_HAMMER_INTERVAL);
+        setInterval(priceService.makeHammers, config.MAKE_RESOURCES_INTERVAL);
+        setInterval(priceService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
 
         setInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
 
