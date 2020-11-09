@@ -71,7 +71,8 @@ const self = {
      */
     nextWarehousePrice(userId) {
         const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.3);
-        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_FARM_RESOURCES_HOURS : 0);
+        const {max_hammers} = userService.getById(userId);
+        const price2 = Math.floor(max_hammers ? max_hammers / config.MAX_FARM_RESOURCES_HOURS : 0);
         return Math.min(price1, price2);
     },
 
@@ -81,7 +82,8 @@ const self = {
      */
     upgradeWarehousePrice(userId) {
         const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.66);
-        const price2 = Math.floor(userService.getById(userId).max_hammers ? userService.getById(userId).max_hammers / config.MAX_FARM_RESOURCES_HOURS : 0);
+        const {max_hammers} = userService.getById(userId);
+        const price2 = Math.floor(max_hammers ? max_hammers * 0.8 : 0);
         return Math.min(price1, price2);
     },
 
