@@ -2,6 +2,7 @@ const security = require("../lib/security");
 const schema = require("../lib/schema");
 const userService = require("./userService");
 const db = require("../lib/database");
+const event = require("../lib/event.js");
 
 const websocket = {
   io: undefined,
@@ -69,6 +70,7 @@ function init(http) {
     console.log("[app] User connected: ", socket.user.username);
     db.prepare("UPDATE USER SET last_active_at=? WHERE username=?;").run(Date.now(), socket.user.username);
     websocket.connections[socket.user.username] = socket;
+    event.emit(event.USER_CONNECTED, socket.user);
     socket.on("disconnect", () => {
       console.log("[app] User disconnected: ", socket.user.username);
       delete websocket.connections[socket.user.username];
