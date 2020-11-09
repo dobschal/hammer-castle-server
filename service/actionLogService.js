@@ -11,7 +11,7 @@ event.on(event.USER_CONNECTED,
         if (lastActiveIsOld) {
             setTimeout(() => {
                 console.log("[actionLogService] User connected after long time.", user.username);
-                const newActionLogs = db.prepare("select * from action_log where timestamp > ?").all(user.last_active_at);
+                const newActionLogs = db.prepare("select * from action_log where timestamp > ? and user_id = ?").all(user.last_active_at, user.id);
                 if (websocket.connections[user.username]) {
                     websocket.connections[user.username].emit("ACTIONS_DURING_OFFLINE", newActionLogs);
                 }
