@@ -7,16 +7,12 @@ event.on(event.USER_CONNECTED,
      * @param {UserEntity} user
      */
     user => {
-        const lastActiveIsOld = Date.now() - user.last_active_at > 1000 * 60;
-        if (lastActiveIsOld) {
-            setTimeout(() => {
-                console.log("[actionLogService] User connected after long time.", user.username);
-                const newActionLogs = db.prepare("select * from action_log where timestamp > ? and user_id = ?").all(user.last_active_at, user.id);
-                if (websocket.connections[user.username]) {
-                    websocket.connections[user.username].emit("ACTIONS_DURING_OFFLINE", newActionLogs);
-                }
-            }, 1000);
-        }
+        setTimeout(() => {
+            const newActionLogs = db.prepare("select * from action_log where timestamp > ? and user_id = ?").all(user.last_active_at, user.id);
+            if (websocket.connections[user.username]) {
+                websocket.connections[user.username].emit("ACTIONS_DURING_OFFLINE", newActionLogs);
+            }
+        }, 1000);
     });
 
 module.exports = {

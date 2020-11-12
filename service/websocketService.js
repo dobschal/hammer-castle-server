@@ -73,6 +73,7 @@ function init(http) {
     event.emit(event.USER_CONNECTED, socket.user);
     socket.on("disconnect", () => {
       console.log("[app] User disconnected: ", socket.user.username);
+      db.prepare("UPDATE USER SET last_active_at=? WHERE username=?;").run(Date.now(), socket.user.username);
       delete websocket.connections[socket.user.username];
     });
   });
