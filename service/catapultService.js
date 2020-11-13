@@ -71,8 +71,8 @@ function create(catapultRequestBody, user) {
         websocket.connections[user.username].emit("UPDATE_USER", user);
     }
     websocket.broadcast("NEW_CATAPULT", catapult);
-    actionLogService.save("You built a catapult.", user.id, user.username, {x, y});
-    actionLogService.save(user.username + " has built a catapult next to you.", opponentCastle.userId, opponentCastle.username, catapultRequestBody);
+    actionLogService.save("You built a catapult.", user.id, user.username, {x, y}, "BUILD_CATAPULT");
+    actionLogService.save(user.username + " has built a catapult next to you.", opponentCastle.userId, opponentCastle.username, catapultRequestBody, "OPPONENT_BUILD_CATAPULT");
     return catapult;
 }
 
@@ -134,15 +134,18 @@ function triggerCatapultAttacks() {
                         "Your catapult destroyed the castle '" + opponentsCastle.name + "' of '" + opponentsCastle.username + "'!!!",
                         catapult.user_id,
                         catapult.username,
-                        opponentsCastle
+                        opponentsCastle,
+                        "CATAPULT_SUCCESS"
                     );
                     actionLogService.save(
                         "Your castle '" + opponentsCastle.name + "' got destroyed by '" + catapult.username + "'!!!",
                         opponentsCastle.userId,
                         opponentsCastle.username,
-                        opponentsCastle);
+                        opponentsCastle,
+                        "CASTLE_DESTROYED"
+                    );
                 } else {
-                    actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle);
+                    actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle, "CATAPULT_FAILED");
                 }
             }
         }

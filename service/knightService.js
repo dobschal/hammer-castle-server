@@ -41,7 +41,13 @@ const self = {
         delete user.password;
         websocket.sendTo(user.username, "UPDATE_USER", user);
 
-        actionLogService.save("You build a knight.", user.id, user.username, knight);
+        actionLogService.save("You build a knight.", user.id, user.username, knight, "BUILD_KNIGHT");
+        castleService.actionLogToNeighbours(
+            knight,
+            user.id,
+            "OPPONENT_BUILD_KNIGHT",
+            neighbor => `${user.username} has built a knight named ${knight.name} next to you.`
+        );
 
         return knight;
     },
@@ -167,8 +173,10 @@ const self = {
      */
     move(requestBody, user) {
         const knight = self.getById(requestBody.knightId);
+        if (self.getByPosition(requestBody)) throw new ConflictError("There can be only one knight per castle at a time.");
         if (!knight) throw new KnightNotFoundError("Didn't find the knight to move...");
         if (knight.userId !== user.id) throw new PermissionError("Sorry, you need to own the knight you want to move...");
+        if (knight.goToX || knight.goToY) throw new ConflictError("The knight is already moving.");
         knight.goToX = requestBody.x;
         knight.goToY = requestBody.y;
         knight.arrivesAt = Date.now() + config.KNIGHT_MOVE_DURATION;

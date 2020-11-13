@@ -238,7 +238,7 @@ const self = {
      * @return {UserEntity} - updated one
      */
     updateUserValues(userId) {
-        const maxHammers = priceService.calculateMaxHammer(userId);
+        const maxHammers = priceService.calculateMaxHammer(userId, undefined);
         const maxBeer = priceService.calculateMaxBeer(userId);
         const {level} = db.prepare(`select sum(c.points) as level
                                     from castle c
