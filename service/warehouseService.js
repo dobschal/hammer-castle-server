@@ -63,7 +63,11 @@ function create(warehouseRequestBody, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_WAREHOUSE", warehouse);
-    actionLogService.save("You built a warehouse.", user.id, user.username, {x,y});
+    actionLogService.save("You built a warehouse.", user.id, user.username, {x, y}, "BUILD_WAREHOUSE");
+    castleService.actionLogToNeighbours({
+        x,
+        y
+    }, user.id, "OPPONENT_BUILD_WAREHOUSE", () => `${user.username} build a warehouse.`);
     return warehouse;
 }
 
@@ -148,7 +152,8 @@ function cleanUp() {
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
             }
-            actionLogService.save("Your warehouse got destroyed!", updatedUser.id, updatedUser.username, w);
+            actionLogService.save("Your warehouse got destroyed!", updatedUser.id, updatedUser.username, w, "WAREHOUSE_DESTROYED");
+            castleService.actionLogToNeighbours(w, updatedUser.id, "OPPONENT_LOST_WAREHOUSE", () => `${updatedUser.username} lost a warehouse.`)
         }
     });
     console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
@@ -192,7 +197,8 @@ module.exports = {
             websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
         }
         websocket.broadcast("UPDATE_WAREHOUSE", warehouse);
-        actionLogService.save("You upgraded a warehouse.", user.id, user.username, requestBody);
+        actionLogService.save("You upgraded a warehouse.", user.id, user.username, requestBody, "UPGRADE_WAREHOUSE");
+        castleService.actionLogToNeighbours(requestBody, user.id, "OPPONENT_UPGRADED_WAREHOUSE", () => `${user.username} upgraded a warehouse.`);
         return warehouse;
     }
 };

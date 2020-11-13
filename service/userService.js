@@ -139,7 +139,7 @@ function checkIpForRegistration(ip) {
  */
 function claimDailyReward(user) {
     db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=?, beer = ? WHERE id=?")
-        .run(user.max_hammers, Date.now(), Math.min(user.beer + 5, user.max_beer), user.id);
+        .run(user.max_hammers, Date.now(), Math.min(user.beer + 50, user.max_beer), user.id);
     const actionLogService = require("./actionLogService");
     actionLogService.save(
         "You claimed your daily reward and filled up your storage with hammers for free.",
@@ -148,9 +148,12 @@ function claimDailyReward(user) {
         {
             x: user.startX,
             y: user.startY
-        });
+        }, "CLAIMED_DAILY_REWARD");
     const websocket = require("./websocketService");
     if (websocket.connections[user.username]) {
+
+        // TODO: send beer update
+
         websocket.connections[user.username].emit("UPDATE_USER", {
             hammer: user.max_hammers,
             last_daily_reward_claim: Date.now()

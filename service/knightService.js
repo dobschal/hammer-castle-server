@@ -107,13 +107,15 @@ const self = {
             if (user.beer === 0 && beerCost > 0) {
                 knightsToDelete.push({id: user.knightId});
                 websocket.sendTo(user.username, "DELETE_KNIGHT", {id: user.knightId});
-
-                // TODO: Add position to actionLog item.
-
-                actionLogService.save("You lost a knight, because you ran out of beer!", user.userId, user.username, {
-                    x: 0,
-                    y: 0
-                });
+                const knight = self.getById(user.knightId);
+                actionLogService.save(
+                    "You lost a knight, because you ran out of beer!",
+                    user.userId,
+                    user.username,
+                    knight,
+                    "LOST_KNIGHT"
+                );
+                castleService.actionLogToNeighbours(knight, user.userId, "OPPONENT_LOST_KNIGHT", () => `${user.username} had no beer left and lost a knight!`);
             } else {
                 const item = {
                     id: user.userId,
