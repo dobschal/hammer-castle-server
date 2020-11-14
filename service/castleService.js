@@ -362,24 +362,22 @@ function _getAllCastlesWithUserPoints() {
                            left join knight k on c.x = k.x and c.y = k.y
                   group by c.x, c.y`)
         .all()
-        .map(c => {
-            c.pointsPerUser = {};
-            if (c.knightUserId && c.knightLevels) {
-                c.pointsPerUser[c.userId] = c.knightUserId === c.userId ? 1 : -1;
+        .map((c1, i, castles) => {
+            c1.pointsPerUser = c1.pointsPerUser || {};
+            if (c1.knightUserId && c1.knightLevels) {
+                c1.pointsPerUser[c1.userId] = c1.knightUserId === c1.userId ? 1 : -1;
             }
-            return c;
+            for (let j = i + 1; j < castles.length; j++) {
+                const c2 = castles[j];
+                c2.pointsPerUser = c2.pointsPerUser || {};
+                const distanceInPixel = tool.positionDistance(c1, c2);
+                if (distanceInPixel < config.MAX_CASTLE_DISTANCE) { // castles are connected via road...
+                    c1.pointsPerUser[String(c2.userId)] = c1.pointsPerUser[String(c2.userId)] ? Number(c1.pointsPerUser[String(c2.userId)]) + 1 : 1;
+                    c2.pointsPerUser[String(c1.userId)] = c2.pointsPerUser[String(c1.userId)] ? Number(c2.pointsPerUser[String(c1.userId)]) + 1 : 1;
+                }
+            }
+            return c1;
         });
-    for (let i = 0; i < castles.length; i++) {
-        const c1 = castles[i];
-        for (let j = i + 1; j < castles.length; j++) {
-            const c2 = castles[j];
-            const distanceInPixel = tool.positionDistance(c1, c2);
-            if (distanceInPixel < config.MAX_CASTLE_DISTANCE) { // castles are connected via road...
-                c1.pointsPerUser[String(c2.userId)] = c1.pointsPerUser[String(c2.userId)] ? Number(c1.pointsPerUser[String(c2.userId)]) + 1 : 1;
-                c2.pointsPerUser[String(c1.userId)] = c2.pointsPerUser[String(c1.userId)] ? Number(c2.pointsPerUser[String(c1.userId)]) + 1 : 1;
-            }
-        }
-    }
     console.log("[castleService] Get all castles with user points in  " + (Date.now() - t1) + "ms.");
     return castles;
 }
