@@ -18,6 +18,8 @@ const actionLogService = require("./actionLogService");
 setTimeout(() => {
     priceService = require("./priceService");
     userService = require("./userService");
+
+    console.error("Test Error!!!!");
 }, 1000);
 
 /**
