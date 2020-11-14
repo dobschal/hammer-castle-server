@@ -350,6 +350,7 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
  * @private
  */
 function _getAllCastlesWithUserPoints() {
+    const t1 = Date.now();
     let castles = db
         .prepare(`select c.x          as x,
                          c.y          as y,
@@ -379,6 +380,7 @@ function _getAllCastlesWithUserPoints() {
             }
         }
     }
+    console.log("[castleService] Get all castles with user points in  " + (Date.now() - t1) + "ms.");
     return castles;
 }
 
