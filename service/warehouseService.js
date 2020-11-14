@@ -1,3 +1,5 @@
+const timer = require("../lib/timer");
+
 const db = require("../lib/database");
 const websocket = require("./websocketService");
 const castleService = require("./castleService");
@@ -132,7 +134,7 @@ function getAllOfUser(user) {
  * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
  */
 function cleanUp() {
-    const t1 = Date.now();
+    timer.start("CLEANED_UP_WAREHOUSES");
     const castles = castleService.getAll();
     getAll().forEach(w => {
         const castle1 = castles.find(c => c.x === w.castle_1_x && c.y === w.castle_1_y);
@@ -156,7 +158,7 @@ function cleanUp() {
             castleService.actionLogToNeighbours(w, updatedUser.id, "OPPONENT_LOST_WAREHOUSE", () => `${updatedUser.username} lost a warehouse.`)
         }
     });
-    console.log("[warehouseService] Cleaned up warehouses in " + (Date.now() - t1) + "ms.");
+    timer.end("CLEANED_UP_WAREHOUSES");
 }
 
 module.exports = {

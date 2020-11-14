@@ -1,3 +1,5 @@
+const timer = require("../lib/timer");
+
 const security = require("../lib/security");
 const db = require("../lib/database");
 const schema = require("../lib/schema");
@@ -248,15 +250,15 @@ const self = {
                                     where c.user_id = ?`).get(userId);
         db.prepare(`UPDATE user
                     SET hammer_per_minute = ?,
-                        level             = ?,
-                        max_hammers       = ?,
-                        max_beer          = ?
+                        level       = ?,
+                        max_hammers = ?,
+                        max_beer    = ?
                     WHERE id = ?`).run(level, level, maxHammers, maxBeer, userId);
         return getById(userId);
     },
 
     cleanUp() {
-        const t1 = Date.now();
+        timer.start("CLEANED_UP_USERS");
         const usersToUpdate = [];
         db.prepare("select u.id as userId, sum(c.points) as level, COUNT(c.points) as castlesCount from user u join castle c on u.id = c.user_id group by u.id")
             .all()
@@ -270,7 +272,7 @@ const self = {
                 });
             });
         self.updateMany(["hammer_per_minute", "level", "max_hammers", "max_beer"], usersToUpdate);
-        console.log("[user] Cleaned up " + usersToUpdate.length + " user in " + (Date.now() - t1) + "ms.");
+        timer.end("CLEANED_UP_USERS");
     },
 
     getRanking,

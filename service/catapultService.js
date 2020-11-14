@@ -1,3 +1,5 @@
+const timer = require("../lib/timer");
+
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
@@ -113,7 +115,7 @@ function getCatapultsFromTo(minX, minY, maxX, maxY) {
 }
 
 function triggerCatapultAttacks() {
-    const t1 = Date.now();
+    timer.start("TRIGGER_CATAPULTS");
     getAll().forEach(catapult => {
         const attacksAt = tool.dateFromDbTimestamp(catapult.timestamp);
         if (attacksAt.getTime() + catapult.lifetime < Date.now()) {
@@ -150,7 +152,7 @@ function triggerCatapultAttacks() {
             }
         }
     });
-    console.log("[catapultService] Triggered catapult attacks in " + (Date.now() - t1) + "ms.");
+    timer.end("TRIGGER_CATAPULTS");
 }
 
 module.exports = {create, getByPosition, getAll, getCatapultsFromTo, triggerCatapultAttacks};

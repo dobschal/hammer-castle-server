@@ -1,3 +1,5 @@
+const timer = require("../lib/timer");
+
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
@@ -18,8 +20,6 @@ const actionLogService = require("./actionLogService");
 setTimeout(() => {
     priceService = require("./priceService");
     userService = require("./userService");
-
-    console.error("Test Error!!!!");
 }, 1000);
 
 /**
@@ -261,7 +261,7 @@ function getByPosition(position) {
 }
 
 function castlePointsCleanUp() {
-    const t1 = Date.now();
+    timer.start("CLEANED_UP_CASTLES");
     const castles = _getAllCastlesWithUserPoints();
     const castlesToCleanUp = [];
     castles.forEach(c => {
@@ -275,11 +275,11 @@ function castlePointsCleanUp() {
         }
     });
     self.updateMany(["points"], castlesToCleanUp);
-    console.log("[castle] Cleaned up castles in " + (Date.now() - t1) + "ms.");
+    timer.end("CLEANED_UP_CASTLES");
 }
 
 function detectCastleConquer() {
-    const t1 = Date.now();
+    timer.start("CONQUERS");
     const castles = _getAllCastlesWithUserPoints();
     castles.forEach(c => {
         if (castles.filter(c2 => c2.userId === c.userId).length <= 2) {
@@ -309,7 +309,7 @@ function detectCastleConquer() {
         }
     }
 
-    console.log("[castle] Handled conquers in " + (Date.now() - t1) + "ms.");
+    timer.end("CONQUERS");
 }
 
 /* * * * * * * * * * * * * * * * * * *  PRIVATE * * * * * * * * * * * * * * * * * * */
@@ -352,7 +352,7 @@ function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId)
  * @private
  */
 function _getAllCastlesWithUserPoints() {
-    const t1 = Date.now();
+    timer.start("GET_USER_POINTS");
     let castles = db
         .prepare(`select c.x          as x,
                          c.y          as y,
@@ -379,7 +379,7 @@ function _getAllCastlesWithUserPoints() {
             }
         }
     });
-    console.log("[castleService] Get all castles with user points in  " + (Date.now() - t1) + "ms.");
+    timer.end("GET_USER_POINTS");
     return castles;
 }
 

@@ -1,3 +1,5 @@
+const timer = require("../lib/timer");
+
 const castleService = require("./castleService");
 const warehouseService = require("./warehouseService");
 const config = require("../config");
@@ -111,7 +113,7 @@ const self = {
     },
 
     makeHammers() {
-        const t1 = Date.now();
+        timer.start("MAKE_HAMMER");
         let sum = 0;
         castleService.getPointsSummedUpPerUser().forEach(userPoints => {
             const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
@@ -119,11 +121,11 @@ const self = {
             const user = userService.giveHammers(userPoints.userId, pointsToGive);
             websocket.sendTo(user.username, "UPDATE_USER", {hammer: user.hammer});
         });
-        console.log("[priceService] Made " + sum + " hammers in: " + (Date.now() - t1) + "ms.");
+        timer.end("MAKE_HAMMER");
     },
 
     makeBeer() {
-        const t1 = Date.now();
+        timer.start("MAKE_BEER");
         let sum = 0;
         castleService.getBeerPointsPerUser().forEach(userPoints => {
             const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
@@ -131,7 +133,7 @@ const self = {
             const user = userService.giveBeer(userPoints.userId, pointsToGive);
             websocket.sendTo(user.username, "UPDATE_USER", {beer: user.beer});
         });
-        console.log("[priceService] Made " + sum + " beer in: " + (Date.now() - t1) + "ms.");
+        timer.end("MAKE_BEER");
     }
 };
 
