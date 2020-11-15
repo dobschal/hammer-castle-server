@@ -367,7 +367,8 @@ function _getAllCastlesWithUserPoints() {
     castles.forEach((c1, i) => {
         c1.pointsPerUser = c1.pointsPerUser || {};
         if (c1.knightUserId && c1.knightLevels) {
-            c1.pointsPerUser[c1.userId] = c1.knightUserId === c1.userId ? 1 : -1;
+            c1.pointsPerUser[c1.userId] = c1.pointsPerUser[c1.userId] || 0;
+            c1.pointsPerUser[c1.userId] += c1.knightUserId === c1.userId ? 1 : -1;
         }
         for (let j = i + 1; j < castles.length; j++) {
             const c2 = castles[j];
