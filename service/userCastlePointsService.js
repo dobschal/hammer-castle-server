@@ -22,6 +22,7 @@ setTimeout(() => {
 event.on(event.CASTLE_POINTS_CHANGED, ({x, y}) => {
 
     const castle = castleService.getByPosition({x, y});
+    if (!castle) return conquerService.removeConquer({x, y});
     websocketService.broadcast("UPDATE_CASTLE", castle);
 
     let [mostCastlePoints] = db.prepare(`SELECT *
