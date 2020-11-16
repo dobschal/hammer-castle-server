@@ -47,4 +47,18 @@ router.post("/move", hasUserRole(["USER"]), function (req, res) {
     });
 });
 
+router.delete("/", hasUserRole(["USER"]), function (req, res) {
+    const requestBody = {
+        x: Number(req.query.x),
+        y: Number(req.query.y)
+    };
+    schema.is(requestBody, "request/DeleteKnight");
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    res.send({
+        success: true,
+        knight: knightService.deleteKnight(requestBody, user)
+    });
+});
+
 module.exports = router;

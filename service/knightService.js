@@ -234,6 +234,28 @@ const self = {
         });
 
         transact(knights);
+    },
+
+
+    /**
+     * @param {Position} position
+     * @param {UserEntity} user
+     */
+    deleteKnight(position, user) {
+        const knight = self.getByPosition(position);
+        if (!knight) {
+            throw new KnightNotFoundError("The knight you want to delete, does not exist anymore.");
+        }
+        const {changes} = db.prepare(`delete
+                                      from knight
+                                      where x = @x
+                                        and y = @y`).run(position);
+        if (changes !== 1) {
+            return console.error("[knight] Delete has unexpected amount of results: ", changes, position, user.id);
+        }
+        websocket.sendTo(user.username, "DELETE_KNIGHT", knight);
+        castleService.actionLogToNeighbours(knight, user.id, "OPPONENT_LOST_KNIGHT", () => `${user.username} deleted a knight!`);
+        event.emit(event.KNIGHT_DESTROYED, knight);
     }
 };
 
