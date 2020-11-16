@@ -7,9 +7,17 @@ const knightService = require("./service/knightService");
 const userService = require("./service/userService");
 const config = require("./config");
 const conquerService = require("./service/conquerService");
+const userCastlePointsService = require("./service/userCastlePointsService");
+const timer = require("./lib/timer");
 
 module.exports = {
     run: function () {
+
+        // Clear all castles on start up
+        timer.start("CLEAR_CASTLES");
+        castleService.getAll().forEach(c => userCastlePointsService.castlePointsCleanUp(c))
+        timer.end("CLEAR_CASTLES");
+
         setInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);
         setInterval(knightService.moveKnights, config.MOVE_KNIGHTS_INTERVAL);
 
@@ -27,6 +35,7 @@ module.exports = {
             setTimeout(handleConquers, config.DETECT_CONQUER_INTERVAL);
         };
         handleConquers();
+
 
         // Stats
         const oneHour = 1000 * 60 * 60;

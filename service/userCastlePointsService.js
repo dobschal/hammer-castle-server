@@ -3,6 +3,7 @@ const db = require("../lib/database");
 const castleService = require("../service/castleService");
 let conquerService;
 const websocketService = require("../service/websocketService");
+const knightService = require("../service/knightService");
 
 setTimeout(() => {
     conquerService = require("../service/conquerService");
@@ -201,14 +202,18 @@ const self = {
     },
 
     castlePointsCleanUp({x, y, userId}) {
-        console.log("[userCastlePointsService] Clean up needed!", x, y, userId);
         const neighborCastles = castleService.getNeighborCastles({x, y});
-        const amount = neighborCastles.filter(c => c.userId === userId).length
+        let amount = neighborCastles.filter(c => c.userId === userId).length;
+        const knight = knightService.getByPosition({x, y});
+        if (knight) {
+            amount += knight.userId === userId ? 1 : -1;
+        }
         const {count} = db.prepare(`select count(*) as count
                                     from user_castle_points
                                     where castleX = ?
                                       and castleY = ?
                                       and userId = ?`).get(x, y, userId);
+
         if (count === 0) {
             self.insertCastlePoints([{
                 x, y, userId, amount
