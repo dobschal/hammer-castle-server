@@ -64,8 +64,4 @@ router.get("/price", hasUserRole(["USER"]), function (req, res) {
   res.send({price});
 });
 
-router.get("/conquers", hasUserRole(["USER"]), function (req, res) {
-  res.send(castleService.getConquers());
-});
-
 module.exports = router;
