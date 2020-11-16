@@ -180,6 +180,12 @@ const self = {
     move(requestBody, user) {
         const knight = self.getById(requestBody.knightId);
         if (self.getByPosition(requestBody)) throw new ConflictError("There can be only one knight per castle at a time.");
+        const {count} = db.prepare(`select count(*) as count
+                                    from knight
+                                    where goToX = ?
+                                      and goToY = ?
+                                      and id <> ?`).get(requestBody.x, requestBody.y, requestBody.knightId);
+        if (count > 0) throw new ConflictError("There is already a knight moving to that castle.");
         if (!knight) throw new KnightNotFoundError("Didn't find the knight to move...");
         if (knight.userId !== user.id) throw new PermissionError("Sorry, you need to own the knight you want to move...");
         if (knight.goToX || knight.goToY) throw new ConflictError("The knight is already moving.");

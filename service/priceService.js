@@ -8,7 +8,7 @@ const websocket = require("./websocketService");
 
 setTimeout(() => {
     userService = require("./userService");
-}, 1000);
+});
 
 const updatesPerMinute = 60000 / config.MAKE_RESOURCES_INTERVAL;
 
