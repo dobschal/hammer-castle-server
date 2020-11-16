@@ -204,28 +204,37 @@ const self = {
         })(castlePoints);
     },
 
+    // slow... use only on start up!!!
     castlePointsCleanUp({x, y, userId}) {
+        const userIds = [userId];
         const neighborCastles = castleService.getNeighborCastles({x, y});
-        let amount = neighborCastles.filter(c => c.userId === userId).length;
-        const knight = knightService.getByPosition({x, y});
-        if (knight) {
-            amount += knight.userId === userId ? 1 : -1;
-        }
-        const {count} = db.prepare(`select count(*) as count
-                                    from user_castle_points
-                                    where castleX = ?
-                                      and castleY = ?
-                                      and userId = ?`).get(x, y, userId);
-
-        if (count === 0) {
-            self.insertCastlePoints([{
-                x, y, userId, amount
-            }])
-        } else {
-            self.updateCastlePoints([{
-                x, y, userId, amount
-            }]);
-        }
+        neighborCastles.forEach(castle => {
+            if (!userIds.includes(castle.userId)) userIds.push(castle.userId);
+        });
+        userIds.forEach(userId => {
+            let amount = neighborCastles.filter(c => c.userId === userId).length;
+            const knight = knightService.getByPosition({x, y});
+            if (knight && knight.userId === userId) {
+                amount += 1;
+            }
+            const {count} = db.prepare(`select count(*) as count
+                                        from user_castle_points
+                                        where castleX = ?
+                                          and castleY = ?
+                                          and userId = ?`).get(x, y, userId);
+            if (count === 0) {
+                self.insertCastlePoints([{
+                    x, y, userId, amount
+                }]);
+            } else {
+                self.updateCastlePoints([{
+                    x, y, userId, amount
+                }]);
+            }
+        });
+        setTimeout(() => {
+            event.emit(event.CASTLE_POINTS_CHANGED, {x, y});
+        });
     },
 
     /**
