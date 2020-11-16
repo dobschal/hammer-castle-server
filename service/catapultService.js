@@ -13,6 +13,7 @@ const PermissionError = require("../error/PermissionError");
 const WrongPositionError = require("../error/WrongPositionError");
 const ConflictError = require("../error/ConflictError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+const event = require("../lib/event");
 setTimeout(() => {
     priceService = require("./priceService");
     userService = require("./userService");
@@ -36,6 +37,8 @@ const selectQuery = `catapult.x,
  * @param {UserEntity} user
  */
 function create(catapultRequestBody, user) {
+    catapultRequestBody.y = Math.round(catapultRequestBody.y);
+    catapultRequestBody.x = Math.round(catapultRequestBody.x);
     user.hammer -= priceService.nextCatapultPrice(user.id);
     if (user.hammer < 0) {
         throw new NotEnoughHammerError("You have not enough hammer to build a catapult.");
@@ -146,6 +149,7 @@ function triggerCatapultAttacks() {
                         opponentsCastle,
                         "CASTLE_DESTROYED"
                     );
+                    event.emit(event.CASTLE_DESTROYED, opponentsCastle);
                 } else {
                     actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle, "CATAPULT_FAILED");
                 }

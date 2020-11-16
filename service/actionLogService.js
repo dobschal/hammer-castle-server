@@ -12,7 +12,7 @@ event.on(event.USER_CONNECTED,
             if (websocket.connections[user.username]) {
                 websocket.connections[user.username].emit("ACTIONS_DURING_OFFLINE", newActionLogs);
             }
-        }, 1000);
+        }, 300);
     });
 
 module.exports = {

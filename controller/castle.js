@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const schema = require("../lib/schema");
+const timer = require("../lib/timer");
 const hasUserRole = require("../filter/hasUserRole");
 const castleService = require("../service/castleService");
 const userService = require("../service/userService");
@@ -42,27 +43,15 @@ router.post("/change-name", hasUserRole(["USER"]), function (req, res) {
   });
 });
 
-let castleFetchTimes = [];
-
-setInterval(() => {
-  if (castleFetchTimes.length) {
-    const averageFetchTime = Math.floor(castleFetchTimes.reduce((prev, curr) => prev + curr, 0) / castleFetchTimes.length);
-    const min = Math.min.apply(null, castleFetchTimes);
-    const max = Math.max.apply(null, castleFetchTimes);
-    console.log("[castle] Fetch castle times (average/max/min/count) in ms: ", averageFetchTime, max, min, castleFetchTimes.length);
-  }
-  castleFetchTimes = [];
-}, 10000);
-
 router.get("/", hasUserRole(["USER"]), function (req, res) {
   if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
-    const t1 = Date.now();
+    timer.start("GET_CASTLES");
     res.send(castleService.getCastlesFromTo(
         Number(req.query.fromX),
         Number(req.query.fromY),
         Number(req.query.toX),
         Number(req.query.toY)));
-    castleFetchTimes.push(Date.now() - t1);
+    timer.end("GET_CASTLES");
   } else {
     res.send(castleService.getAll());
   }

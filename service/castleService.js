@@ -16,19 +16,24 @@ const ConflictError = require("../error/ConflictError");
 let priceService;
 let userService;
 const actionLogService = require("./actionLogService");
+const event = require("../lib/event");
 
 setTimeout(() => {
     priceService = require("./priceService");
     userService = require("./userService");
-}, 1000);
+});
 
-/**
- * @type {ConquerDto[]}
- */
-const runningConquers = [];
+event.on(event.CASTLE_DESTROYED, deletedCastle => {
+    setTimeout(() => {
+        const castle = getAllOfUserId(deletedCastle.userId)[0];
+        if (!castle) return;
+        const user = userService.getById(deletedCastle.userId);
+        userService.markAsHome(castle, user);
+    });
+});
 
 const castleDtoSqlQuery = `
-    SELECT castle.points  as points,
+    SELECT IFNULL(ucp.points, 0)  as points,
        castle.x       as x,
        castle.y       as y,
        castle.name    as name,
@@ -53,6 +58,8 @@ function isFirstCastle(user) {
  * @return {CastleDto}
  */
 function create(castlePosition, user) {
+    castlePosition.y = Math.round(castlePosition.y);
+    castlePosition.x = Math.round(castlePosition.x);
     if (blockAreaService.isInsideBlockArea(castlePosition)) {
         throw new CastleInsideBlockAreaError("Tried to build a castle inside a blocked area.");
     }
@@ -73,11 +80,11 @@ function create(castlePosition, user) {
     }
     user.hammer = (user.hammer - price) || 0;
 
-    const points = _updatedCastlePointsForNewCastle(castlePosition, user.id);
     const castleName = config.CASTLE_NAMES[Math.floor(Math.random() * config.CASTLE_NAMES.length)];
-    db.prepare(`INSERT INTO castle (user_id, x, y, points, name)
-                VALUES (?, ?, ?, ?, ?);`)
-        .run(user.id, castlePosition.x, castlePosition.y, points, castleName);
+    db.prepare(`INSERT INTO castle (user_id, x, y, name)
+                VALUES (?, ?, ?, ?);`)
+        .run(user.id, castlePosition.x, castlePosition.y, castleName);
+    event.emit(event.CASTLE_CREATED, {userId: user.id, ...castlePosition});
     const castle = getOne(castlePosition);
     websocket.broadcast("NEW_CASTLE", castle);
 
@@ -101,6 +108,7 @@ function create(castlePosition, user) {
         "OPPONENT_BUILD_CASTLE",
         () => `${user.username} has built a castle named ${castle.name} next to you.`
     );
+
     return castle;
 }
 
@@ -124,13 +132,13 @@ function deleteCastle(castlePosition, user, isSelfDelete = true) {
             throw new ConflictError("You cannot delete your last 2 castles...");
         }
     }
-    _updatedCastlePointsForDestroyedCastle(castlePosition, user.id);
     db.prepare("DELETE FROM castle WHERE x=? AND y=? AND user_id=?;").run(castlePosition.x, castlePosition.y, user.id);
     const updatedUser = userService.updateUserValues(user.id);
     if (websocket.connections[user.username]) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("DELETE_CASTLE", castlePosition);
+    event.emit(event.CASTLE_DESTROYED, castleToDelete);
 }
 
 /**
@@ -176,8 +184,13 @@ function getCastlesFromTo(minX, minY, maxX, maxY) {
     const sqlQuery = `
         ${castleDtoSqlQuery}
         FROM castle
-        JOIN user ON castle.user_id = user.id
-        WHERE castle.x <= ? AND castle.x >= ? AND castle.y <= ? AND castle.y >= ?;
+                 JOIN user ON castle.user_id = user.id
+                 LEFT JOIN user_castle_points ucp
+                      ON castle.x = ucp.castleX AND castle.y = ucp.castleY AND castle.user_id = ucp.userId
+        WHERE castle.x <= ?
+          AND castle.x >= ?
+          AND castle.y <= ?
+          AND castle.y >= ?;
     `;
     return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
@@ -189,7 +202,9 @@ function getAll() {
     return db.prepare(`
        ${castleDtoSqlQuery}
         FROM castle
-                 JOIN user ON castle.user_id = user.id;
+                 JOIN user ON castle.user_id = user.id 
+                 LEFT JOIN user_castle_points ucp
+                      ON castle.x = ucp.castleX AND castle.y = ucp.castleY AND castle.user_id = ucp.userId;
     `).all();
 }
 
@@ -201,7 +216,10 @@ function getAllOfUserId(userId) {
     return db.prepare(`
        ${castleDtoSqlQuery}
         FROM castle
-                 JOIN user ON castle.user_id = user.id WHERE castle.user_id=?;
+                 JOIN user ON castle.user_id = user.id 
+                 LEFT JOIN user_castle_points ucp
+                      ON castle.x = ucp.castleX AND castle.y = ucp.castleY AND castle.user_id = ucp.userId
+                  WHERE castle.user_id=?;
     `).all(userId);
 }
 
@@ -213,7 +231,10 @@ function getAllOfUser(user) {
     return db.prepare(`
        ${castleDtoSqlQuery}
         FROM castle
-                 JOIN user ON castle.user_id = user.id WHERE castle.user_id=?;
+                 JOIN user ON castle.user_id = user.id 
+                 LEFT JOIN user_castle_points ucp
+                      ON castle.x = ucp.castleX AND castle.y = ucp.castleY AND castle.user_id = ucp.userId
+                  WHERE castle.user_id=?;
     `).all(user.id);
 }
 
@@ -228,28 +249,11 @@ function getOne({x, y}) {
         ${castleDtoSqlQuery}
         FROM castle
                  JOIN user ON castle.user_id = user.id
+                 LEFT JOIN user_castle_points ucp
+                      ON castle.x = ucp.castleX AND castle.y = ucp.castleY AND castle.user_id = ucp.userId
         WHERE castle.x = ?
           AND castle.y = ?;
     `).get(x, y);
-}
-
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} newUserId
- * @param {number} newPointsOfCastle
- * @return {CastleDto}
- */
-function changeCastlesUser(x, y, newUserId, newPointsOfCastle) {
-    db.prepare("UPDATE castle SET user_id=?, points=? WHERE x=? AND y=?").run(newUserId, newPointsOfCastle, x, y);
-    return getOne({x, y});
-}
-
-/**
- * @return {ConquerDto[]}
- */
-function getConquers() {
-    return runningConquers;
 }
 
 /**
@@ -260,191 +264,23 @@ function getByPosition(position) {
     return getOne(position);
 }
 
-function castlePointsCleanUp() {
-    timer.start("CLEANED_UP_CASTLES");
-    const castles = _getAllCastlesWithUserPoints();
-    const castlesToCleanUp = [];
-    castles.forEach(c => {
-        if (c.points === 0 && !c.pointsPerUser[c.userId]) return;
-        if (c.pointsPerUser[c.userId] !== c.points) {
-            castlesToCleanUp.push({
-                points: c.pointsPerUser[c.userId] || 0,
-                x: c.x,
-                y: c.y
-            });
-        }
-    });
-    self.updateMany(["points"], castlesToCleanUp);
-    timer.end("CLEANED_UP_CASTLES");
-}
-
-function detectCastleConquer() {
-    timer.start("CONQUERS");
-    const castles = _getAllCastlesWithUserPoints();
-    castles.forEach(c => {
-        if (castles.filter(c2 => c2.userId === c.userId).length <= 2) {
-            return;
-        }
-        let maxPoints = 0;
-        let userId = undefined;
-        Object.keys(c.pointsPerUser).forEach(userId2 => {
-            if (c.pointsPerUser[userId2] > maxPoints || (c.pointsPerUser[userId2] === maxPoints && Number(userId2) === c.userId)) {
-                maxPoints = c.pointsPerUser[userId2];
-                userId = Number(userId2);
-            }
-        });
-        if (userId && userId !== c.userId) {
-            const newPoints = c.pointsPerUser[userId];
-            delete c.pointsPerUser; // clean up
-            _handleCastleConquer(c, userId, newPoints);
-        }
-    });
-
-    // Clean up...
-    for (let i = runningConquers.length - 1; i > 0; i--) {
-        const runningConquer = runningConquers[i];
-        if (runningConquer.timestamp + config.CONQUER_DELAY < Date.now()) {
-            runningConquers.splice(i, 1);
-            websocket.broadcast("DELETE_CONQUER", runningConquer);
-        }
-    }
-
-    timer.end("CONQUERS");
-}
-
-/* * * * * * * * * * * * * * * * * * *  PRIVATE * * * * * * * * * * * * * * * * * * */
-
-function _updatedCastlePointsForNewCastle(newCastlePosition, userId) {
-    const castles = getAllOfUserId(userId);
-    let pointsOfNewCastle = 0;
-    castles.forEach(castleFromDb => {
-        const distanceInPixel = tool.positionDistance(newCastlePosition, castleFromDb);
-        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
-            pointsOfNewCastle++;
-            db.prepare(`UPDATE castle
-                                       SET points = points + 1
-                                       WHERE x = ?
-                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
-            castleFromDb.points++;
-            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
-        }
-    });
-    return pointsOfNewCastle;
-}
-
-function _updatedCastlePointsForDestroyedCastle(destroyedCastlePosition, userId) {
-    const castles = getAllOfUserId(userId);
-    castles.forEach(castleFromDb => {
-        const distanceInPixel = tool.positionDistance(destroyedCastlePosition, castleFromDb);
-        if (distanceInPixel <= config.MAX_CASTLE_DISTANCE) {
-            db.prepare(`UPDATE castle
-                                       SET points = points - 1
-                                       WHERE x = ?
-                                         AND y = ?`).run(castleFromDb.x, castleFromDb.y);
-            castleFromDb.points++;
-            websocket.broadcast("UPDATE_CASTLE", castleFromDb);
-        }
-    });
-}
-
-/**
- * @return {CastleDto[]}
- * @private
- */
-function _getAllCastlesWithUserPoints() {
-    timer.start("GET_USER_POINTS");
-    let castles = db
-        .prepare(`select c.x          as x,
-                         c.y          as y,
-                         c.user_id    as userId,
-                         c.points     as points,
-                         sum(k.level) as knightLevels,
-                         k.userId     as knightUserId
-                  from castle c
-                           left join knight k on c.x = k.x and c.y = k.y
-                  group by c.x, c.y`)
-        .all();
-    castles.forEach((c1, i) => {
-        c1.pointsPerUser = c1.pointsPerUser || {};
-        if (c1.knightUserId && c1.knightLevels) {
-            c1.pointsPerUser[c1.userId] = c1.knightUserId === c1.userId ? 1 : -1;
-        }
-        for (let j = i + 1; j < castles.length; j++) {
-            const c2 = castles[j];
-            c2.pointsPerUser = c2.pointsPerUser || {};
-            const distanceInPixel = tool.positionDistance(c1, c2);
-            if (distanceInPixel < config.MAX_CASTLE_DISTANCE) { // castles are connected via road...
-                c1.pointsPerUser[String(c2.userId)] = c1.pointsPerUser[String(c2.userId)] ? Number(c1.pointsPerUser[String(c2.userId)]) + 1 : 1;
-                c2.pointsPerUser[String(c1.userId)] = c2.pointsPerUser[String(c1.userId)] ? Number(c2.pointsPerUser[String(c1.userId)]) + 1 : 1;
-            }
-        }
-    });
-    timer.end("GET_USER_POINTS");
-    return castles;
-}
-
-/**
- * @param {CastleDto} castle
- * @param {number} userId
- * @param {number} newPointsOfCastle
- * @private
- */
-function _handleCastleConquer(castle, userId, newPointsOfCastle) {
-    const index = runningConquers.findIndex(rc => rc.castle.x === castle.x && rc.castle.y === castle.y);
-    if (index === -1) {
-        console.log("[castle] New conquer started: ", castle.x, castle.y, userId);
-        const newConquer = {
-            castle,
-            userId,
-            timestamp: Date.now() + (castle.points * 1000)
-        };
-        schema.is(newConquer, "dto/Conquer");
-        runningConquers.push(newConquer);
-        websocket.broadcast("NEW_CONQUER", newConquer);
-    } else {
-        let runningConquer = runningConquers[index];
-        if (runningConquer.userId !== userId) {
-            console.log("[castle] Conquerer for castle changed: ", castle.x, castle.y, userId);
-            runningConquer.castle = getByPosition(castle);
-            runningConquer.timestamp = Date.now() + (castle.points * 1000);
-            runningConquer.userId = userId;
-            websocket.broadcast("UPDATE_CONQUER", runningConquer);
-        } else { // conquer is still active, check if timestamp is old enough for conquer final...
-            if (runningConquer.timestamp + config.CONQUER_DELAY <= Date.now()) {
-                console.log("[castle] Castle conquered!: ", castle.x, castle.y, userId);
-                const involvedUsers = [castle.userId, userId];
-
-                const exchangedCastle = changeCastlesUser(runningConquer.castle.x, runningConquer.castle.y, runningConquer.userId, newPointsOfCastle);
-                schema.is(exchangedCastle, "dto/Castle");
-
-                involvedUsers.forEach((userId) => {
-                    const user = userService.getById(userId);
-                    const updatedUser = userService.updateUserValues(user.id);
-                    if (websocket.connections[user.username]) {
-                        websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
-                    }
-                });
-
-                websocket.broadcast("UPDATE_CASTLE", exchangedCastle);
-                websocket.broadcast("DELETE_CONQUER", runningConquer);
-                runningConquers.splice(index, 1);
-            }
-        }
-    }
-}
-
-
 const self = {
     create,
     deleteCastle,
     getAll,
     getCastlesFromTo,
     changeName,
-    getConquers,
     getAllOfUser,
-    castlePointsCleanUp,
-    detectCastleConquer,
     getByPosition,
+
+    /**
+     * @param {Position} castle
+     * @return {CastleDto[]}
+     */
+    getNeighborCastles(castle) {
+        return getCastlesInDistance(castle, config.MAX_CASTLE_DISTANCE)
+            .filter(c => tool.positionDistance(castle, c) < config.MAX_CASTLE_DISTANCE && (c.x !== castle.x || c.y !== castle.y));
+    },
 
     /**
      *
@@ -476,9 +312,11 @@ const self = {
      * @return {UserPointsDto[]}
      */
     getPointsSummedUpPerUser() {
-        return db.prepare(`select u.id as userId, u.username as username, sum(c.points) as points
+        return db.prepare(`select u.id as userId, u.username as username, sum(ucp.points) as points
                            from castle c
                                     join user u on u.id = c.user_id
+                                    left join user_castle_points ucp
+                                              on c.x = ucp.castleX AND c.y = ucp.castleY AND c.user_id = ucp.userId
                            group by u.id`).all();
     },
 
@@ -486,12 +324,14 @@ const self = {
      * @return {UserPointsDto[]}
      */
     getBeerPointsPerUser() {
-        return db.prepare(`select u.id          as userId,
-                                  u.username    as username,
-                                  sum(c.points) as points
+        return db.prepare(`select u.id            as userId,
+                                  u.username      as username,
+                                  sum(ucp.points) as points
                            from castle c
                                     join user u on u.id = c.user_id
-                           where c.points > 4
+                                    left join user_castle_points ucp
+                                              on c.x = ucp.castleX AND c.y = ucp.castleY AND c.user_id = ucp.userId
+                           where ucp.points > 4
                            group by u.id`).all();
     },
 
@@ -501,12 +341,14 @@ const self = {
      * @return {UserPointsDto[]}
      */
     getBeerPoints(userId) {
-        return db.prepare(`select u.id          as userId,
-                                  u.username    as username,
-                                  sum(c.points) as points
+        return db.prepare(`select u.id            as userId,
+                                  u.username      as username,
+                                  sum(ucp.points) as points
                            from castle c
                                     join user u on u.id = c.user_id
-                           where c.points > 4
+                                    left join user_castle_points ucp
+                                              on c.x = ucp.castleX AND c.y = ucp.castleY AND c.user_id = ucp.userId
+                           where ucp.points > 4
                              and u.id = ?
                            group by u.id`).all(userId);
     },
@@ -548,6 +390,19 @@ const self = {
                 }
             });
         });
+    },
+
+    /**
+     * @param {CastleDto[]} castles
+     */
+    changeCastlesUser(castles) {
+        const statement = db.prepare(`UPDATE castle
+                                      SET user_id=@userId
+                                      WHERE x = @x
+                                        AND y = @y;`);
+        return db.transaction(castles => {
+            for (const castle of castles) statement.run(castle);
+        })(castles);
     }
 };
 

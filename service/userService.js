@@ -245,8 +245,10 @@ const self = {
     updateUserValues(userId) {
         const maxHammers = priceService.calculateMaxHammer(userId, undefined);
         const maxBeer = priceService.calculateMaxBeer(userId);
-        const {level} = db.prepare(`select sum(c.points) as level
+        const {level} = db.prepare(`select sum(ucp.points) as level
                                     from castle c
+                                             left join user_castle_points ucp
+                                                       on c.x = ucp.castleX AND c.y = ucp.castleY AND c.user_id = ucp.userId
                                     where c.user_id = ?`).get(userId);
         db.prepare(`UPDATE user
                     SET hammer_per_minute = ?,

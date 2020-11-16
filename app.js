@@ -7,6 +7,9 @@ const db = require("./lib/database");
 const cors = require("cors");
 const scheduler = require("./scheduler");
 
+// To attach event listeners
+require("./service/userCastlePointsService");
+
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
 if (process.env.ADMIN_PASSWORD === undefined) {

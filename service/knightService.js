@@ -10,6 +10,7 @@ const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
 const KnightNotFoundError = require("../error/KnightNotFoundError");
 const config = require("../config");
+const event = require("../lib/event");
 
 const self = {
 
@@ -19,7 +20,8 @@ const self = {
      * @return {KnightEntity}
      */
     create(position, user) {
-
+        position.x = Math.round(position.x);
+        position.y = Math.round(position.y);
         user.hammer -= priceService.nextKnightPrice(user.id);
         if (user.hammer < 0)
             throw new NotEnoughHammerError("You have not enough hammer to build a knight.");
@@ -48,6 +50,8 @@ const self = {
             "OPPONENT_BUILD_KNIGHT",
             neighbor => `${user.username} has built a knight named ${knight.name} next to you.`
         );
+
+        event.emit(event.KNIGHT_CREATED, knight);
 
         return knight;
     },
@@ -116,6 +120,7 @@ const self = {
                     "LOST_KNIGHT"
                 );
                 castleService.actionLogToNeighbours(knight, user.userId, "OPPONENT_LOST_KNIGHT", () => `${user.username} had no beer left and lost a knight!`);
+                event.emit(event.KNIGHT_DESTROYED, knight);
             } else {
                 const item = {
                     id: user.userId,
@@ -134,10 +139,9 @@ const self = {
      */
     deleteMany(knightsToDelete) {
         const deleteKnight = db.prepare("DELETE FROM knight WHERE id = @id;");
-        const deleteKnights = db.transaction((knightsToDelete) => {
+        db.transaction((knightsToDelete) => {
             for (const knightId of knightsToDelete) deleteKnight.run(knightId);
-        });
-        deleteKnights(knightsToDelete);
+        })(knightsToDelete);
     },
 
     /**
@@ -189,6 +193,7 @@ const self = {
                                       where id = @id`).run(knight);
         if (changes !== 1) throw new Error("[knightService] Update knight failed.");
         websocket.broadcast("UPDATE_KNIGHT", knight);
+        castleService.actionLogToNeighbours(knight, user.id, "OPPONENT_MOVES_KNIGHT", () => `${user.username} moved his knight.`);
     },
 
     moveKnights() {
@@ -200,6 +205,7 @@ const self = {
              */
             knight => {
                 if (knight.arrivesAt < Date.now()) {
+                    event.emit(event.KNIGHT_MOVED, knight);
                     knight.x = knight.goToX;
                     knight.y = knight.goToY;
                     knight.arrivesAt = undefined;

@@ -13,6 +13,14 @@
  * @property {undefined} id - required
  */
 /**
+ * @typedef CastlePointsEntity
+ * @type {object}
+ * @property {number} castleX
+ * @property {number} castleY
+ * @property {number} userId
+ * @property {number} points
+ */
+/**
  * @typedef CatapultEntity
  * @type {object}
  * @property {number} x
@@ -27,6 +35,14 @@
  * @property {string} color
  * @property {string} username
  * @property {number} chance_to_win
+ */
+/**
+ * @typedef ConquerEntity
+ * @type {object}
+ * @property {number} castleX
+ * @property {number} castleY
+ * @property {number} userId
+ * @property {number} startedAt
  */
 /**
  * @typedef ForumCategoryEntity
@@ -104,7 +120,7 @@
 /**
  * @typedef AddFriendRequest
  * @type {object}
- * @property {string} username
+ * @property {string} username - required
  */
 /**
  * @typedef ChangeCastleNameRequest

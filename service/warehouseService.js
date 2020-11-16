@@ -32,6 +32,8 @@ const selectQuery = `warehouse.x,
  * @param {UserEntity} user
  */
 function create(warehouseRequestBody, user) {
+    warehouseRequestBody.x = Math.round(warehouseRequestBody.x);
+    warehouseRequestBody.y = Math.round(warehouseRequestBody.y);
     user.hammer -= priceService.nextWarehousePrice(user.id);
     if (user.hammer < 0) {
         throw new NotEnoughHammerError("You have not enough hammer to build a warehouse.");

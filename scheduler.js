@@ -6,14 +6,12 @@ const warehouseService = require("./service/warehouseService");
 const knightService = require("./service/knightService");
 const userService = require("./service/userService");
 const config = require("./config");
+const conquerService = require("./service/conquerService");
 
 module.exports = {
     run: function () {
         setInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);
         setInterval(knightService.moveKnights, config.MOVE_KNIGHTS_INTERVAL);
-
-        setInterval(castleService.detectCastleConquer, config.DETECT_CONQUER_INTERVAL);
-        setInterval(castleService.castlePointsCleanUp, config.CASTLE_CLEAN_UP_INTERVAL);
 
         setInterval(userService.cleanUp.bind(userService), config.USER_CLEAN_UP_INTERVAL);
 
@@ -23,6 +21,12 @@ module.exports = {
         setInterval(priceService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
 
         setInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
+
+        const handleConquers = () => {
+            conquerService.handleConquers();
+            setTimeout(handleConquers, config.DETECT_CONQUER_INTERVAL);
+        };
+        handleConquers();
 
         // Stats
         const oneHour = 1000 * 60 * 60;

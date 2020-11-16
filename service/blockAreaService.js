@@ -9,6 +9,8 @@ const websocket = require("./websocketService");
  * @return {BlockAreaDto}
  */
 function createBlockArea(position, type = "FOREST") {
+    position.y = Math.round(position.y);
+    position.x = Math.round(position.x);
     db.prepare(`INSERT INTO block_area (x, y, size, type)
                 VALUES (?, ?, ?, ?);`)
         .run(position.x, position.y, config.BLOCK_AREA_SIZE, type);
