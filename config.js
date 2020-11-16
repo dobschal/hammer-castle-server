@@ -24,7 +24,7 @@ module.exports = {
 
     // - - - - - - - - - - - - Catapult - - - - - - - - - - - - //
 
-    CATAPULT_LIFETIME: 1000 * 60 * 5, // needs to be the same as in client!!!
+    CATAPULT_LIFETIME: isDev ? 3000 : 1000 * 60 * 5, // needs to be the same as in client!!!
 
     // - - - - - - - - - - - - Knights - - - - - - - - - - - - //
 

@@ -149,7 +149,6 @@ function triggerCatapultAttacks() {
                         opponentsCastle,
                         "CASTLE_DESTROYED"
                     );
-                    event.emit(event.CASTLE_DESTROYED, opponentsCastle);
                 } else {
                     actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle, "CATAPULT_FAILED");
                 }
