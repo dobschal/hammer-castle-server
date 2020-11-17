@@ -50,7 +50,7 @@ const self = {
             return item;
         });
 
-        if (items.length === 0) return timer.end("CHECK_CONQUERS");
+        if (items.length === 0) return timer.end("CHECK_CONQUERS", "no conquers");
 
         self.deleteByPositions(items);
 
@@ -86,7 +86,7 @@ const self = {
             });
         });
 
-        timer.end("CHECK_CONQUERS");
+        timer.end("CHECK_CONQUERS", items.length + " conquers handled.");
     },
 
     /**
