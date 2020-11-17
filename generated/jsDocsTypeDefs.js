@@ -83,6 +83,19 @@
  * @property {string} name
  */
 /**
+ * @typedef QuestEntity
+ * @type {object}
+ * @property {number} id
+ * @property {number} prevQuestId
+ * @property {number} isRecurring
+ * @property {string} recurringInterval
+ * @property {string} titleKey
+ * @property {string} messageKey
+ * @property {string} imageName
+ * @property {string} benefitType
+ * @property {number} benefitValue
+ */
+/**
  * @typedef UserEntity
  * @type {object}
  * @property {number} id
@@ -169,6 +182,12 @@
  */
 /**
  * @typedef DeleteCastleRequest
+ * @type {object}
+ * @property {number} x
+ * @property {number} y
+ */
+/**
+ * @typedef DeleteKnightRequest
  * @type {object}
  * @property {number} x
  * @property {number} y
