@@ -90,5 +90,5 @@ http.listen(8082, () => {
 // // // // // // // // // // // // // // // // // // // // // // // // //
 
 // Scheduler
-scheduler.run();
+setTimeout(scheduler.run);
 

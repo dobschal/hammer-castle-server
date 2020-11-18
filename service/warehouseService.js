@@ -13,7 +13,7 @@ const actionLogService = require("./actionLogService");
 setTimeout(() => {
     priceService = require("./priceService");
     userService = require("./userService");
-}, 1000);
+});
 
 const selectQuery = `warehouse.x,
                warehouse.y,

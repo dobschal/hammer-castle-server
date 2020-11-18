@@ -10,31 +10,36 @@ const conquerService = require("./service/conquerService");
 const userCastlePointsService = require("./service/userCastlePointsService");
 const timer = require("./lib/timer");
 
+/**
+ * @param {function} callback
+ * @param {number} delay
+ */
+function realInterval(callback, delay) {
+    callback();
+    setTimeout(() => realInterval(callback, delay), delay);
+}
+
 module.exports = {
     run: function () {
 
         // Clear all castles on start up
-        timer.start("CLEAR_CASTLES");
+        timer.start("CLEAR_CASTLES_ON_START");
         castleService.getAll().forEach(c => userCastlePointsService.castlePointsCleanUp(c))
-        timer.end("CLEAR_CASTLES");
+        timer.end("CLEAR_CASTLES_ON_START");
 
-        setInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);
-        setInterval(knightService.moveKnights, config.MOVE_KNIGHTS_INTERVAL);
+        realInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);
+        realInterval(knightService.moveKnights, config.MOVE_KNIGHTS_INTERVAL);
 
-        setInterval(userService.cleanUp.bind(userService), config.USER_CLEAN_UP_INTERVAL);
+        realInterval(userService.cleanUp.bind(userService), config.USER_CLEAN_UP_INTERVAL);
 
-        setInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);
+        realInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);
 
-        setInterval(priceService.makeHammers, config.MAKE_RESOURCES_INTERVAL);
-        setInterval(priceService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
+        realInterval(priceService.makeHammers, config.MAKE_RESOURCES_INTERVAL);
+        realInterval(priceService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
 
-        setInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
+        realInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
 
-        const handleConquers = () => {
-            conquerService.handleConquers();
-            setTimeout(handleConquers, config.DETECT_CONQUER_INTERVAL);
-        };
-        handleConquers();
+        realInterval(conquerService.handleConquers, config.DETECT_CONQUER_INTERVAL);
 
 
         // Stats

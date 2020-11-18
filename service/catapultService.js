@@ -5,6 +5,7 @@ const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocketService");
 const castleService = require("./castleService");
+const knightService = require("./knightService");
 let priceService;
 let userService;
 const actionLogService = require("./actionLogService");
@@ -149,8 +150,32 @@ function triggerCatapultAttacks() {
                         opponentsCastle,
                         "CASTLE_DESTROYED"
                     );
+                    try {
+                        knightService.deleteKnight({
+                            x: opponentsCastle.x,
+                            y: opponentsCastle.y
+                        }, opponentUser, true);
+                        console.log("[catapultService] Player lost knight.");
+                    } catch (e) {
+                        console.log("[catapultService] Not knight to lost...", e);
+                    }
                 } else {
-                    actionLogService.save("Your catapult failed!!!", catapult.user_id, catapult.username, opponentsCastle, "CATAPULT_FAILED");
+
+                    //  If the catapult failed, there is still a chance of 20% to destroy
+                    //  the knight inside the castle.
+                    if (Math.random() < 0.2) {
+                        const opponentUser = userService.getById(opponentsCastle.userId);
+                        try {
+                            knightService.deleteKnight({
+                                x: opponentsCastle.x,
+                                y: opponentsCastle.y
+                            }, opponentUser, true);
+                            console.log("[catapultService] Player lost knight.");
+                        } catch (e) {
+                            console.log("[catapultService] Not knight to lost...", e);
+                        }
+                    }
+                    actionLogService.save("Your catapult wasn't strong enough to destroy the castle!", catapult.user_id, catapult.username, opponentsCastle, "CATAPULT_FAILED");
                 }
             }
         }

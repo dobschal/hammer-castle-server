@@ -15,7 +15,7 @@ setTimeout(() => {
     priceService = require("./priceService");
     castleService = require("./castleService");
     websocket = require("./websocketService");
-}, 1000);
+});
 
 /**
  * @return {UserEntity}

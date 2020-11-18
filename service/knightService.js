@@ -246,8 +246,9 @@ const self = {
     /**
      * @param {Position} position
      * @param {UserEntity} user
+     * @param {boolean} isDestroy
      */
-    deleteKnight(position, user) {
+    deleteKnight(position, user, isDestroy= false) {
         const knight = self.getByPosition(position);
         if (!knight) {
             throw new KnightNotFoundError("The knight you want to delete, does not exist anymore.");
@@ -259,8 +260,18 @@ const self = {
         if (changes !== 1) {
             return console.error("[knight] Delete has unexpected amount of results: ", changes, position, user.id);
         }
-        websocket.sendTo(user.username, "DELETE_KNIGHT", knight);
-        castleService.actionLogToNeighbours(knight, user.id, "OPPONENT_LOST_KNIGHT", () => `${user.username} deleted a knight!`);
+        websocket.broadcast("DELETE_KNIGHT", knight);
+
+        if (isDestroy) {
+            actionLogService.save("You lost a knight, caused by a catapult attack!", user.id, user.username, knight, "LOST_KNIGHT");
+        }
+
+        castleService.actionLogToNeighbours(
+            knight,
+            user.id,
+            "OPPONENT_LOST_KNIGHT",
+            () => `${user.username} ${isDestroy ? "lost a knight, caused by a catapult attack" : " deleted a knight"}!`
+        );
         event.emit(event.KNIGHT_DESTROYED, knight);
     }
 };
