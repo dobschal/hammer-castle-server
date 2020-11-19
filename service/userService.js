@@ -43,7 +43,7 @@ function create({username, password, color}, ip) {
         .get(username);
     if (amount > 0) throw new ConflictError("Username is already taken.");
     password = security.encrypt(password, process.env.SECRET);
-    const {x, y} = _getStartPosition();
+    const {x, y} = self.getStartPosition();
     const {lastInsertRowid: userId} = db
         .prepare("INSERT INTO user (username, password, color, hammer, max_hammers, startX, startY) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .run(username, password, color, 200, 0, x, y);
@@ -164,19 +164,6 @@ function claimDailyReward(user) {
 }
 
 /**
- * @return {Position}
- */
-function _getStartPosition() {
-    const position = db.prepare("SELECT x, y FROM castle ORDER BY ABS(X) DESC, ABS(Y) DESC LIMIT 1").get() || {
-        x: 0,
-        y: 0
-    };
-    position.x += Math.floor(Math.random() * 1000);
-    position.y += Math.floor(Math.random() * 1000);
-    return position;
-}
-
-/**
  * @param {number} userId
  * @return {Position}
  */
@@ -191,6 +178,29 @@ const self = {
     getAllUsers,
     currentUser,
     getUserFromTokenBody,
+
+    /**
+     * @param {string} username
+     * @return {UserEntity}
+     */
+    getByUsername(username) {
+        return db.prepare(`SELECT *
+                           FROM user
+                           WHERE username = ?`).get(username);
+    },
+
+    /**
+     * @return {Position}
+     */
+    getStartPosition() {
+        const position = db.prepare("SELECT x, y FROM castle ORDER BY ABS(X) DESC, ABS(Y) DESC LIMIT 1").get() || {
+            x: 0,
+            y: 0
+        };
+        position.x += Math.floor(Math.random() * 1000);
+        position.y += Math.floor(Math.random() * 1000);
+        return position;
+    },
 
     /**
      * @param {string[]} keys

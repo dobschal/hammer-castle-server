@@ -9,6 +9,7 @@ const config = require("./config");
 const conquerService = require("./service/conquerService");
 const userCastlePointsService = require("./service/userCastlePointsService");
 const timer = require("./lib/timer");
+const kiService = require("./service/kiService");
 
 /**
  * @param {function} callback
@@ -49,5 +50,7 @@ module.exports = {
         setInterval(() => statsService.storeLastActive("1h", oneHour), oneHour);
         setInterval(() => statsService.storeLastActive("24h", twentyFourHours), oneHour);
         setInterval(() => statsService.storeLastActive("30d", thirtyDays), oneHour);
+
+        setTimeout(kiService.start, 1000);
     }
 };

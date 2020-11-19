@@ -71,6 +71,8 @@ function create(castlePosition, user) {
     } else {
         if (castlesInDistance.some(c => tool.positionDistance(castlePosition, c) < config.MIN_CASTLE_DISTANCE)) {
             throw new CastleMinDistanceError("The new position is too close to a other castle.");
+        } else if (!castlesInDistance.some(c => user.id === c.userId && tool.positionDistance(castlePosition, c) < config.MAX_CASTLE_DISTANCE)) {
+            throw new WrongPositionError("Your castle should have an owned neighbor castle!");
         }
     }
 
