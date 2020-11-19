@@ -24,7 +24,7 @@ module.exports = {
 
         // Clear all castles on start up
         timer.start("CLEAR_CASTLES_ON_START");
-        castleService.getAll().forEach(c => userCastlePointsService.castlePointsCleanUp(c))
+        castleService.getAll().forEach(c => userCastlePointsService.castlePointsCleanUp(c));
         timer.end("CLEAR_CASTLES_ON_START");
 
         realInterval(knightService.chargeKnights, config.CHARGE_KNIGHTS_INTERVAL);

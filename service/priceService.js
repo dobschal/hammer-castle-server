@@ -5,6 +5,7 @@ const warehouseService = require("./warehouseService");
 const config = require("../config");
 let userService;
 const websocket = require("./websocketService");
+const knightService = require("./knightService");
 
 setTimeout(() => {
     userService = require("./userService");
@@ -54,9 +55,13 @@ const self = {
      */
     nextKnightPrice(userId) {
 
-        // TODO: find price calculation...
+        const [{summedKnightLevels}] = knightService.getSummedKnightLevels(userId);
 
-        return config.KNIGHT_PRICE;
+        // One Castle level 6 can feed one knight...
+        // So a player can have at least 6 warehouses level 2 at one castle!
+        // ATM 300 Beer is the base price, which means 3 warehouses level 2 per knight.
+
+        return config.KNIGHT_PRICE * (summedKnightLevels + 1);
     },
 
     /**

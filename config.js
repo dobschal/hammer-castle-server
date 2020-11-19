@@ -28,8 +28,8 @@ module.exports = {
 
     // - - - - - - - - - - - - Knights - - - - - - - - - - - - //
 
-    KNIGHT_PRICE: 5000,
-    KNIGHT_BEER_COST_PER_LEVEL: 6,
+    KNIGHT_PRICE: 300, // beer
+    KNIGHT_BEER_COST_PER_LEVEL: 7,
     KNIGHT_MOVE_DURATION: isDev ? 1000 * 5 : 1000 * 60 * 15,
 
     // - - - - - - - - - - - - Events - - - - - - - - - - - - //

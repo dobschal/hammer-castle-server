@@ -1,16 +1,19 @@
 const db = require("../lib/database");
-const priceService = require("../service/priceService");
+let priceService;
 const userService = require("./userService");
 const castleService = require("./castleService");
 const websocket = require("./websocketService");
 const actionLogService = require("./actionLogService");
-const NotEnoughHammerError = require("../error/NotEnoughHammerError");
+const NotEnoughBeerError = require("../error/NotEnoughBeerError");
 const CastleNotFoundError = require("../error/CastleNotFoundError");
 const PermissionError = require("../error/PermissionError");
 const ConflictError = require("../error/ConflictError");
 const KnightNotFoundError = require("../error/KnightNotFoundError");
 const config = require("../config");
 const event = require("../lib/event");
+setTimeout(() => {
+    priceService = require("../service/priceService");
+});
 
 const self = {
 
@@ -22,9 +25,9 @@ const self = {
     create(position, user) {
         position.x = Math.round(position.x);
         position.y = Math.round(position.y);
-        user.hammer -= priceService.nextKnightPrice(user.id);
-        if (user.hammer < 0)
-            throw new NotEnoughHammerError("You have not enough hammer to build a knight.");
+        user.beer -= priceService.nextKnightPrice(user.id);
+        if (user.beer < 0)
+            throw new NotEnoughBeerError("You have not enough beer to build a knight.");
 
         const userCastle = castleService.getByPosition(position);
         if (!userCastle)
@@ -39,7 +42,7 @@ const self = {
         const knight = this.getById(knightId);
         websocket.broadcast("NEW_KNIGHT", knight);
 
-        db.prepare("UPDATE user SET hammer=? WHERE id = ?").run(user.hammer, user.id);
+        db.prepare("UPDATE user SET beer=@beer WHERE id = @id").run(user);
         delete user.password;
         websocket.sendTo(user.username, "UPDATE_USER", user);
 
