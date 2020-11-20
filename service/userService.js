@@ -240,7 +240,12 @@ const self = {
     cleanUp() {
         timer.start("CLEANED_UP_USERS");
         const usersToUpdate = [];
-        db.prepare("select u.id as userId, sum(c.points) as level, COUNT(c.points) as castlesCount from user u join castle c on u.id = c.user_id group by u.id")
+        db.prepare(`select u.id as userId, sum(ucp.points) as level, COUNT(c.name) as castlesCount
+                    from user u
+                             join castle c on u.id = c.user_id
+                             left join user_castle_points ucp
+                                       on c.x = ucp.castleX AND c.y = ucp.castleY AND c.user_id = ucp.userId
+                    group by u.id`)
             .all()
             .forEach(({userId, level, castlesCount}) => {
                 usersToUpdate.push({
@@ -248,7 +253,7 @@ const self = {
                     hammer_per_minute: level,
                     level: level,
                     max_hammers: priceService.calculateMaxHammer(userId, castlesCount),
-                    max_beer: priceService.calculateMaxBeer(userId, castlesCount)
+                    max_beer: priceService.calculateMaxBeer(userId)
                 });
             });
         self.updateMany(["hammer_per_minute", "level", "max_hammers", "max_beer"], usersToUpdate);
