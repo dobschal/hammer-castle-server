@@ -52,7 +52,12 @@ const self = {
      */
     nextKnightPrice(userId) {
 
-        const [{summedKnightLevels}] = knightService.getSummedKnightLevels(userId);
+        let summedKnightLevels;
+        try {
+            [{summedKnightLevels}] = knightService.getSummedKnightLevels(userId);
+        } catch (e) {
+            summedKnightLevels = 0;
+        }
 
         // One Castle level 6 can feed one knight...
         // So a player can have at least 6 warehouses level 2 at one castle!
