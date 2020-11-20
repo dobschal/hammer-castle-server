@@ -111,28 +111,16 @@ function getWarehousesFromTo(minX, minY, maxX, maxY) {
     return db.prepare(sqlQuery).all(maxX, minX, maxY, minY);
 }
 
-/**
- * @param {Warehouse} w
- */
-function deleteWarehouse(w) {
-    const result = db.prepare("DELETE FROM warehouse WHERE x=? AND y=?").run(w.x, w.y);
-    websocket.broadcast("DELETE_WAREHOUSE", w);
-}
-
-/**
- * @param {UserEntity} user
- * @return {Warehouse[]}
- */
-function getAllOfUser(user) {
-    return db.prepare(`
-       SELECT ${selectQuery}
-        FROM warehouse
-                 JOIN user ON warehouse.user_id = user.id WHERE warehouse.user_id=?;
-    `).all(user.id);
-}
-
 const self = {
     create, getByPosition, getAll, getWarehousesFromTo,
+
+    /**
+     * @param {UserEntity} user
+     * @return {Warehouse[]}
+     */
+    getAllOfUser(user) {
+        return db.prepare(`SELECT ${selectQuery} FROM warehouse JOIN user ON warehouse.user_id = user.id WHERE warehouse.user_id=?;`).all(user.id);
+    },
 
     /**
      * A warehouse is located on a road connecting two castles of one player.

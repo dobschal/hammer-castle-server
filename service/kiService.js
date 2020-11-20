@@ -1,5 +1,6 @@
 const userService = require("./userService");
 const castleService = require("./castleService");
+const priceService = require("./priceService");
 const warehouseService = require("./warehouseService");
 const config = require("../config");
 const timer = require("../lib/timer");
@@ -15,8 +16,8 @@ const self = {
             self.registerPlayer(playerName);
             self.authenticatePlayer(playerName);
             console.log("[kiService] Authenticated KI players...");
-            //self.buildCastle(playerName);
-            self.buildWarehouse(playerName);
+            self.buildCastle(playerName);
+            //self.buildWarehouse(playerName);
         });
     },
 
@@ -45,6 +46,14 @@ const self = {
     buildCastle(playerName) {
         timer.start("KI_BUILD_CASTLE");
         const {user} = playersData[playerName];
+        const price = priceService.nextCastlePrice(user.id);
+        if (user.max_hammers < price) {
+            console.log("[kiService] Build warehouse next, cause max hammers is too low...");
+            return setTimeout(() => self.buildWarehouse(playerName), timeout);
+        }
+        if (user.hammer < price) {
+            return setTimeout(() => self.buildCastle(playerName), timeout);
+        }
         const castles = castleService.getAllOfUser(user);
         let position;
         if (castles.length === 0) {
