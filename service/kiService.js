@@ -5,7 +5,7 @@ const warehouseService = require("./warehouseService");
 const config = require("../config");
 const timer = require("../lib/timer");
 const tool = require("../lib/tool");
-const players = ["Mischa", "Luni", "Johnny"];
+const players = ["Mischa", "Luni", "Johnny", "Pete"];
 const playersData = {};
 const timeout = 60000;
 
