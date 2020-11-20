@@ -1,11 +1,8 @@
-const timer = require("../lib/timer");
-
 const db = require("../lib/database");
 const tool = require("../lib/tool");
 const config = require("../config");
 const websocket = require("./websocketService");
 const blockAreaService = require("./blockAreaService");
-const schema = require("../lib/schema");
 const CastleInsideBlockAreaError = require("../error/CastleInsideBlockAreaError");
 const CastleMinDistanceError = require("../error/CastleMinDistanceError");
 const NotEnoughHammerError = require("../error/NotEnoughHammerError");
@@ -371,32 +368,27 @@ const self = {
      * @param {number} userId
      * @param {string} type
      * @param {function(NeighborDto)} messageResolver
-     * @return {Promise}
      */
     actionLogToNeighbours(position, userId, type, messageResolver) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                try {
-                    const castlesInDistance = getCastlesInDistance(position, config.MAX_CASTLE_DISTANCE * 2);
-                    const neighbors = castlesInDistance
-                        .map(c => ({userId: c.userId, username: c.username}))
-                        .filter((neighbor, index, neighbors) => {
-                            if (neighbor.userId === userId)
-                                return false; // only neighbors not user itself
-                            if (neighbors.findIndex(neighbor2 => neighbor2.userId === neighbor.userId) !== index)
-                                return false; // make neighbors array unique distinct
-                            return true;
-                        });
-                    neighbors.forEach(neighbor => {
-                        const message = messageResolver(neighbor);
-                        actionLogService.save(message, neighbor.userId, neighbor.username, position, type);
+        setTimeout(() => {
+            try {
+                const castlesInDistance = getCastlesInDistance(position, config.MAX_CASTLE_DISTANCE * 2);
+                const neighbors = castlesInDistance
+                    .map(c => ({userId: c.userId, username: c.username}))
+                    .filter((neighbor, index, neighbors) => {
+                        if (neighbor.userId === userId)
+                            return false; // only neighbors not user itself
+                        if (neighbors.findIndex(neighbor2 => neighbor2.userId === neighbor.userId) !== index)
+                            return false; // make neighbors array unique distinct
+                        return true;
                     });
-                    resolve(true);
-                } catch (e) {
-                    console.error("[castleService] Error in actionLogToNeighbours: ", e);
-                    reject(e);
-                }
-            });
+                neighbors.forEach(neighbor => {
+                    const message = messageResolver(neighbor);
+                    actionLogService.save(message, neighbor.userId, neighbor.username, position, type);
+                });
+            } catch (e) {
+                console.error("[castleService] Error in actionLogToNeighbours: ", e);
+            }
         });
     },
 

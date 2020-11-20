@@ -51,7 +51,7 @@ const self = {
             knight,
             user.id,
             "OPPONENT_BUILD_KNIGHT",
-            neighbor => `${user.username} has built a knight named ${knight.name} next to you.`
+            () => `${user.username} has built a knight named ${knight.name} next to you.`
         );
 
         event.emit(event.KNIGHT_CREATED, knight);

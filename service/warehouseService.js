@@ -131,40 +131,57 @@ function getAllOfUser(user) {
     `).all(user.id);
 }
 
-/**
- * A warehouse is located on a road connecting two castles of one player.
- * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
- */
-function cleanUp() {
-    timer.start("CLEANED_UP_WAREHOUSES");
-    const castles = castleService.getAll();
-    getAll().forEach(w => {
-        const castle1 = castles.find(c => c.x === w.castle_1_x && c.y === w.castle_1_y);
-        const castle2 = castles.find(c => c.x === w.castle_2_x && c.y === w.castle_2_y);
-        let remove = false;
-        if (!castle1 || !castle2) {
-            console.log("[warehouseService] Destroy warehouse, close castle was destroyed.");
-            remove = true;
-        } else if (w.user_id !== castle1.userId || w.user_id !== castle2.userId) {
-            console.log("[warehouseService] Destroy warehouse, user is not owning close castle anymore.");
-            remove = true;
-        }
-        if (remove) {
-            deleteWarehouse(w);
-            const user = userService.getById(w.user_id);
-            const updatedUser = userService.updateUserValues(user.id);
-            if (websocket.connections[user.username]) {
-                websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
-            }
-            actionLogService.save("Your warehouse got destroyed!", updatedUser.id, updatedUser.username, w, "WAREHOUSE_DESTROYED");
-            castleService.actionLogToNeighbours(w, updatedUser.id, "OPPONENT_LOST_WAREHOUSE", () => `${updatedUser.username} lost a warehouse.`)
-        }
-    });
-    timer.end("CLEANED_UP_WAREHOUSES");
-}
+const self = {
+    create, getByPosition, getAll, getWarehousesFromTo,
 
-module.exports = {
-    create, getByPosition, getAll, getWarehousesFromTo, cleanUp, deleteWarehouse,
+    /**
+     * A warehouse is located on a road connecting two castles of one player.
+     * In case that one of the castles is destroyed, or owned by a different player, we need to destroy the warehouse.
+     */
+    cleanUp() {
+        timer.start("CLEANED_UP_WAREHOUSES");
+
+        const warehousesToDelete = [];
+        let usersToUpdate = [];
+        const castles = castleService.getAll();
+        self.getAll().forEach(w => {
+            const castle1 = castles.find(c => c.x === w.castle_1_x && c.y === w.castle_1_y);
+            const castle2 = castles.find(c => c.x === w.castle_2_x && c.y === w.castle_2_y);
+            let remove = false;
+            if (!castle1 || !castle2) {
+                console.log("[warehouseService] Destroy warehouse, close castle was destroyed.");
+                remove = true;
+            } else if (w.user_id !== castle1.userId || w.user_id !== castle2.userId) {
+                console.log("[warehouseService] Destroy warehouse, user is not owning close castle anymore.");
+                remove = true;
+            }
+            if (remove) {
+                warehousesToDelete.push(w);
+                usersToUpdate[w.user_id] = w.username;
+                setTimeout(() => {
+                    actionLogService.save("Your warehouse got destroyed!", w.user_id, w.username, w, "WAREHOUSE_DESTROYED");
+                    castleService.actionLogToNeighbours(w, w.user_id, "OPPONENT_LOST_WAREHOUSE", () => `${w.username} lost a warehouse.`);
+                });
+            }
+        });
+        self.deleteMany(warehousesToDelete);
+
+        usersToUpdate = Object.keys(usersToUpdate).map(userId => {
+            const username = usersToUpdate[userId];
+            userId = Number(userId);
+            const maxHammers = priceService.calculateMaxHammer(userId, castles.filter(c => c.userId === userId).length);
+            const maxBeer = priceService.calculateMaxBeer(userId);
+            if (websocket.connections[username]) {
+                websocket.connections[username].emit("UPDATE_USER", {
+                    max_hammers: maxHammers, max_beer: maxBeer
+                });
+            }
+            return {id: userId, max_hammers: maxHammers, max_beer: maxBeer};
+        });
+        userService.updateMany(["max_hammers", "max_beer"], usersToUpdate);
+
+        timer.end("CLEANED_UP_WAREHOUSES", `${usersToUpdate.length} users updated and ${warehousesToDelete.length} warehouses deleted.`);
+    },
 
     /**
      * @param {number} userId
@@ -204,5 +221,17 @@ module.exports = {
         actionLogService.save("You upgraded a warehouse.", user.id, user.username, requestBody, "UPGRADE_WAREHOUSE");
         castleService.actionLogToNeighbours(requestBody, user.id, "OPPONENT_UPGRADED_WAREHOUSE", () => `${user.username} upgraded a warehouse.`);
         return warehouse;
-    }
+    },
+
+    /**
+     * @param {{x: number, y: number}[]} warehousesToDelete
+     */
+    deleteMany(warehousesToDelete) {
+        const deleteWarehouse = db.prepare("DELETE FROM warehouse WHERE x = @x AND y = @y;");
+        db.transaction((warehousesToDelete) => {
+            for (const warehouse of warehousesToDelete) deleteWarehouse.run(warehouse);
+        })(warehousesToDelete);
+    },
 };
+
+module.exports = self;

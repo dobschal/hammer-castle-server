@@ -262,7 +262,6 @@ const self = {
 
     getRanking,
     checkIpForRegistration,
-    checkIpForLogin,
     claimDailyReward,
     getPlayersHome,
 
