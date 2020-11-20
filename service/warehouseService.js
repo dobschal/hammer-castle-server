@@ -171,11 +171,13 @@ const self = {
             userId = Number(userId);
             const maxHammers = priceService.calculateMaxHammer(userId, castles.filter(c => c.userId === userId).length);
             const maxBeer = priceService.calculateMaxBeer(userId);
-            if (websocket.connections[username]) {
-                websocket.connections[username].emit("UPDATE_USER", {
-                    max_hammers: maxHammers, max_beer: maxBeer
-                });
-            }
+            setTimeout(() => {
+                if (websocket.connections[username]) {
+                    websocket.connections[username].emit("UPDATE_USER", {
+                        max_hammers: maxHammers, max_beer: maxBeer
+                    });
+                }
+            });
             return {id: userId, max_hammers: maxHammers, max_beer: maxBeer};
         });
         userService.updateMany(["max_hammers", "max_beer"], usersToUpdate);
