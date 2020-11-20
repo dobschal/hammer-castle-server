@@ -279,4 +279,6 @@
  * @property {number} points
  * @property {number} beer
  * @property {number} max_beer
+ * @property {number} hammer
+ * @property {number} max_hammers
  */

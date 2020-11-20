@@ -5,6 +5,7 @@ const config = require("../config");
 const tool = require("../lib/tool");
 const players = ["Mischa", "Luni", "Johnny"];
 const playersData = {};
+const timer = 10000;
 
 const self = {
 
@@ -13,7 +14,7 @@ const self = {
             self.registerPlayer(playerName);
             self.authenticatePlayer(playerName);
             console.log("[kiService] Authenticated KI players...");
-            self.buildCastle(playerName);
+            //self.buildCastle(playerName);
             self.buildWarehouse(playerName);
         });
     },
@@ -59,21 +60,25 @@ const self = {
         try {
             castleService.create(position, user);
             console.log("[kiService] KI player " + playerName + " build castle at: ", position.x, position.y);
+            setTimeout(() => self.buildWarehouse(playerName), timer);
         } catch (e) {
             console.log("[kiService] Failed to build castle.", e.message);
+            setTimeout(() => self.buildCastle(playerName), timer);
         }
-        setTimeout(() => self.buildCastle(playerName), 60000);
     },
 
     buildWarehouse(playerName) {
         const {user} = playersData[playerName];
         const castles = castleService.getAllOfUser(user);
+        if (castles.length < 2) {
+            return setTimeout(() => self.buildCastle(playerName), timer);
+        }
         const firstCastle = castles[Math.floor(Math.random() * castles.length)];
         const secondCastle = castles.find(c => firstCastle.x !== c.x && firstCastle.y !== c.y && tool.positionDistance(firstCastle, c) < config.MAX_CASTLE_DISTANCE);
         if (firstCastle && secondCastle) {
             const position = {
-                x: (firstCastle.x + secondCastle.x) / 2,
-                y: (firstCastle.y + secondCastle.y) / 2
+                x: Math.round((firstCastle.x + secondCastle.x) / 2),
+                y: Math.round((firstCastle.y + secondCastle.y) / 2)
             };
             try {
                 warehouseService.create({
@@ -84,13 +89,15 @@ const self = {
                     castle2X: secondCastle.x,
                     castle2Y: secondCastle.y
                 }, user);
+                setTimeout(() => self.buildCastle(playerName), timer);
             } catch (e) {
                 console.log("[kiService] Failed to build warehouse.", e.message);
+                setTimeout(() => self.buildWarehouse(playerName), timer);
             }
         } else {
             console.log("[kiService] No place for new warehouse found...");
+            setTimeout(() => self.buildWarehouse(playerName), timer);
         }
-        setTimeout(() => self.buildWarehouse(playerName), 50000);
     }
 };
 

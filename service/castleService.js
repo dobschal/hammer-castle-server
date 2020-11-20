@@ -314,7 +314,11 @@ const self = {
      * @return {UserPointsDto[]}
      */
     getPointsSummedUpPerUser() {
-        return db.prepare(`select u.id as userId, u.username as username, sum(ucp.points) as points
+        return db.prepare(`select u.id            as userId,
+                                  u.username      as username,
+                                  sum(ucp.points) as points,
+                                  u.hammer        as hammer,
+                                  u.max_hammers   as max_hammers
                            from castle c
                                     join user u on u.id = c.user_id
                                     left join user_castle_points ucp

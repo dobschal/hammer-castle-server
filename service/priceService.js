@@ -10,8 +10,6 @@ setTimeout(() => {
     userService = require("./userService");
 });
 
-const updatesPerMinute = 60000 / config.MAKE_RESOURCES_INTERVAL;
-
 const self = {
 
     /**
@@ -114,18 +112,6 @@ const self = {
     calculateMaxBeer(userId) {
         const amountOfWarehouses = warehouseService.countWarehousesOfUser(userId, 2) + 1;
         return amountOfWarehouses * 100;
-    },
-
-    makeHammers() {
-        timer.start("MAKE_HAMMER");
-        let sum = 0;
-        castleService.getPointsSummedUpPerUser().forEach(userPoints => {
-            const pointsToGive = Math.ceil(userPoints.points / updatesPerMinute);
-            sum += pointsToGive;
-            const user = userService.giveHammers(userPoints.userId, pointsToGive);
-            websocket.sendTo(user.username, "UPDATE_USER", {hammer: user.hammer});
-        });
-        timer.end("MAKE_HAMMER");
     }
 };
 

@@ -218,36 +218,6 @@ const self = {
 
     /**
      * @param {number} userId
-     * @param {number} amountOfHammers
-     * @return {UserEntity}
-     */
-    giveHammers(userId, amountOfHammers) {
-        const user = getById(userId);
-        if (user.hammer > user.max_hammers) return user;
-        user.hammer = Math.min(user.hammer + Math.max(1, amountOfHammers), user.max_hammers);
-        db.prepare(`UPDATE user
-                    SET hammer = ?
-                    WHERE id = ?`).run(user.hammer, userId);
-        return user;
-    },
-
-    /**
-     * @param {number} userId
-     * @param {number} amountOfBeer
-     * @return {UserEntity}
-     */
-    // giveBeer(userId, amountOfBeer) {
-    //     const user = getById(userId);
-    //     if (user.beer > user.max_beer) return user;
-    //     user.beer = Math.min(user.beer + Math.max(1, amountOfBeer), user.max_beer);
-    //     db.prepare(`UPDATE user
-    //                 SET beer = ?
-    //                 WHERE id = ?`).run(user.beer, userId);
-    //     return user;
-    // },
-
-    /**
-     * @param {number} userId
      * @return {UserEntity} - updated one
      */
     updateUserValues(userId) {
