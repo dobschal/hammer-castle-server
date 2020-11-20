@@ -11,6 +11,7 @@ const ConflictError = require("../error/ConflictError");
 const KnightNotFoundError = require("../error/KnightNotFoundError");
 const config = require("../config");
 const event = require("../lib/event");
+const timer = require("../lib/timer");
 setTimeout(() => {
     priceService = require("../service/priceService");
 });
@@ -107,6 +108,7 @@ const self = {
 
     // Runs every minute...
     chargeKnights() {
+        timer.start("CHARGE_KNIGHTS");
         const usersToUpdate = [];
         const knightsToDelete = [];
         self.getSummedKnightLevelsPerUser().forEach(user => {
@@ -135,6 +137,7 @@ const self = {
         });
         self.deleteMany(knightsToDelete);
         userService.updateMany(["beer"], usersToUpdate);
+        timer.end("CHARGE_KNIGHTS", `${usersToUpdate.length} user updated and ${knightsToDelete.length} knights deleted!`);
     },
 
     /**
@@ -206,6 +209,7 @@ const self = {
     },
 
     moveKnights() {
+        timer.start("MOVE_KNIGHTS");
         const knights = db.prepare("SELECT knight.*, user.username, user.color FROM knight JOIN user ON knight.userId = user.id WHERE goToX NOT NULL AND goToY NOT NULL AND arrivesAt NOT NULL;").all();
         const knightsToUpdate = [];
         knights.forEach(
@@ -227,6 +231,7 @@ const self = {
                 }
             });
         self.updateMany(["x", "y", "goToX", "goToY", "arrivesAt"], knightsToUpdate);
+        timer.end("MOVE_KNIGHTS", `${knightsToUpdate.length} knights moved!`);
     },
 
     /**
