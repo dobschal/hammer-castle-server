@@ -5,6 +5,7 @@ const schema = require("../lib/schema");
 const hasUserRole = require("../filter/hasUserRole");
 const websocket = require("../service/websocketService");
 const requestIp = require('request-ip');
+const statsService = require("../service/statsService");
 
 router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
   res.send(userService.getAllUsers());
@@ -43,12 +44,16 @@ router.get("/current", hasUserRole(["USER"]), function (req, res) {
   res.send(user);
 });
 
-router.post("/daily-reward", function (req, res) {
+router.post("/daily-reward", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
   if (user.last_daily_reward_claim < Date.now() - 1000 * 60 * 60 * 24) {
     userService.claimDailyReward(user);
   }
   res.send({success: true});
+});
+
+router.get("/stats/activity-history", hasUserRole(["ADMIN"]), function (req, res) {
+  res.send({success: true, result: statsService.getActiveUsers()});
 });
 
 router.post("/register", function (req, res) {

@@ -49,9 +49,9 @@ module.exports = {
         const oneHour = 1000 * 60 * 60;
         const twentyFourHours = oneHour * 24;
         const thirtyDays = twentyFourHours * 30;
-        setInterval(() => statsService.storeLastActive("1h", oneHour), oneHour);
-        setInterval(() => statsService.storeLastActive("24h", twentyFourHours), oneHour);
-        setInterval(() => statsService.storeLastActive("30d", thirtyDays), oneHour);
+        setInterval(() => statsService.storeLastActive(statsService.range["1h"], oneHour), oneHour);
+        setInterval(() => statsService.storeLastActive(statsService.range["24h"], twentyFourHours), oneHour);
+        setInterval(() => statsService.storeLastActive(statsService.range["30d"], thirtyDays), oneHour);
 
         setTimeout(kiService.start, 1000);
     }
