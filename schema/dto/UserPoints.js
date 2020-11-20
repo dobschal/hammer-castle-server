@@ -3,6 +3,8 @@ module.exports = {
     properties: {
         userId: {type: "number"},
         username: {type: "string"},
-        points: {type: "number"}
+        points: {type: "number"},
+        beer: {type: "number"},
+        max_beer: {type: "number"}
     }
 };

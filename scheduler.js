@@ -3,6 +3,7 @@ const priceService = require("./service/priceService");
 const castleService = require("./service/castleService");
 const catapultService = require("./service/catapultService");
 const warehouseService = require("./service/warehouseService");
+const beerService = require("./service/beerService");
 const knightService = require("./service/knightService");
 const userService = require("./service/userService");
 const config = require("./config");
@@ -36,7 +37,7 @@ module.exports = {
         realInterval(warehouseService.cleanUp, config.WAREHOUSE_CLEAN_UP_INTERVAL);
 
         realInterval(priceService.makeHammers, config.MAKE_RESOURCES_INTERVAL);
-        realInterval(priceService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
+        realInterval(beerService.makeBeer, config.MAKE_RESOURCES_INTERVAL);
 
         realInterval(catapultService.triggerCatapultAttacks, config.DETECT_CATAPULT_ATTACK_INTERVAL);
 

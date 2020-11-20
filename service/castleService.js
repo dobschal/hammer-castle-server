@@ -328,7 +328,9 @@ const self = {
     getBeerPointsPerUser() {
         return db.prepare(`select u.id            as userId,
                                   u.username      as username,
-                                  sum(ucp.points) as points
+                                  sum(ucp.points) as points,
+                                  u.beer          as beer,
+                                  u.max_beer      as max_beer
                            from castle c
                                     join user u on u.id = c.user_id
                                     left join user_castle_points ucp

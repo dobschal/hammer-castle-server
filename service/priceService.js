@@ -1,5 +1,4 @@
 const timer = require("../lib/timer");
-
 const castleService = require("./castleService");
 const warehouseService = require("./warehouseService");
 const config = require("../config");
@@ -121,24 +120,12 @@ const self = {
         timer.start("MAKE_HAMMER");
         let sum = 0;
         castleService.getPointsSummedUpPerUser().forEach(userPoints => {
-            const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
+            const pointsToGive = Math.ceil(userPoints.points / updatesPerMinute);
             sum += pointsToGive;
             const user = userService.giveHammers(userPoints.userId, pointsToGive);
             websocket.sendTo(user.username, "UPDATE_USER", {hammer: user.hammer});
         });
         timer.end("MAKE_HAMMER");
-    },
-
-    makeBeer() {
-        timer.start("MAKE_BEER");
-        let sum = 0;
-        castleService.getBeerPointsPerUser().forEach(userPoints => {
-            const pointsToGive = Math.floor(userPoints.points / updatesPerMinute);
-            sum += pointsToGive;
-            const user = userService.giveBeer(userPoints.userId, pointsToGive);
-            websocket.sendTo(user.username, "UPDATE_USER", {beer: user.beer});
-        });
-        timer.end("MAKE_BEER");
     }
 };
 

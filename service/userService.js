@@ -211,11 +211,9 @@ const self = {
         const sqlQuery = `UPDATE user SET ${keys.join(", ")} WHERE id = @id;`;
         const update = db.prepare(sqlQuery);
 
-        const transact = db.transaction((users) => {
+        return db.transaction((users) => {
             for (const user of users) update.run(user);
-        });
-
-        transact(users);
+        })(users);
     },
 
     /**
@@ -238,15 +236,15 @@ const self = {
      * @param {number} amountOfBeer
      * @return {UserEntity}
      */
-    giveBeer(userId, amountOfBeer) {
-        const user = getById(userId);
-        if (user.beer > user.max_beer) return user;
-        user.beer = Math.min(user.beer + Math.max(1, amountOfBeer), user.max_beer);
-        db.prepare(`UPDATE user
-                    SET beer = ?
-                    WHERE id = ?`).run(user.beer, userId);
-        return user;
-    },
+    // giveBeer(userId, amountOfBeer) {
+    //     const user = getById(userId);
+    //     if (user.beer > user.max_beer) return user;
+    //     user.beer = Math.min(user.beer + Math.max(1, amountOfBeer), user.max_beer);
+    //     db.prepare(`UPDATE user
+    //                 SET beer = ?
+    //                 WHERE id = ?`).run(user.beer, userId);
+    //     return user;
+    // },
 
     /**
      * @param {number} userId

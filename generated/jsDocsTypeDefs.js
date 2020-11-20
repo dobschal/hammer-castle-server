@@ -277,4 +277,6 @@
  * @property {number} userId
  * @property {string} username
  * @property {number} points
+ * @property {number} beer
+ * @property {number} max_beer
  */
