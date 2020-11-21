@@ -49,10 +49,12 @@ const self = {
         const price = priceService.nextCastlePrice(user.id);
         if (user.max_hammers < price) {
             console.log("[kiService] Build warehouse next, cause max hammers is too low...", playerName);
+            timer.end("KI_BUILD_CASTLE", playerName);
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (user.hammer < price) {
             console.log("[kiService] KI Player hos not enough hammer for a castle: ", playerName);
+            timer.end("KI_BUILD_CASTLE", playerName);
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
         const castles = castleService.getAllOfUser(user);
@@ -98,7 +100,7 @@ const self = {
             console.log("[kiService] Didn't find position for new castle: ", playerName);
             setTimeout(() => self.buildCastle(playerName), timeout);
         }
-        timer.end("KI_BUILD_CASTLE");
+        timer.end("KI_BUILD_CASTLE", playerName);
     },
 
     buildWarehouse(playerName) {
@@ -109,9 +111,11 @@ const self = {
         const price = priceService.nextWarehousePrice(user.id)
         if (user.hammer < price) {
             console.log("[kiService] KI Player hos not enough hammer for warehouse: ", playerName);
+            timer.end("KI_BUILD_WAREHOUSE", playerName);
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (castles.length < 2) {
+            timer.end("KI_BUILD_WAREHOUSE", playerName);
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
         let tries = 0;
@@ -151,7 +155,7 @@ const self = {
             console.log("[kiService] No place for new warehouse found...", playerName);
             setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
-        timer.end("KI_BUILD_WAREHOUSE");
+        timer.end("KI_BUILD_WAREHOUSE", playerName);
     }
 };
 
