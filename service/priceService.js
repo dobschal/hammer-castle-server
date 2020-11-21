@@ -90,7 +90,7 @@ const self = {
      * @return {number}
      */
     upgradeWarehousePrice(userId) {
-        const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.66);
+        const price1 = Math.floor(self.aimedHammersPerHour(userId) * 0.6);
         const {max_hammers} = userService.getById(userId);
         const price2 = Math.floor(max_hammers ? max_hammers * 0.8 : 0);
         return Math.min(price1, price2);
