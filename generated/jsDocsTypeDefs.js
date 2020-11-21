@@ -117,6 +117,14 @@
  * @property {number} max_beer
  */
 /**
+ * @typedef UserQuestEntity
+ * @type {object}
+ * @property {number} timestamp
+ * @property {number} questId
+ * @property {number} userId
+ * @property {string} status
+ */
+/**
  * @typedef WarehouseEntity
  * @type {object}
  * @property {number} x
