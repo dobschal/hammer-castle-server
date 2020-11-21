@@ -17,7 +17,6 @@ const self = {
             self.authenticatePlayer(playerName);
             console.log("[kiService] Authenticated KI players...");
             self.buildCastle(playerName);
-            //self.buildWarehouse(playerName);
         });
     },
 
@@ -59,14 +58,24 @@ const self = {
         if (castles.length === 0) {
             position = userService.getStartPosition();
         } else {
-            const aroundCastle = castles[Math.floor(Math.random() * castles.length)];
+            const possibleNeighbors = castles.filter(c => c.points < 5);
+            const aroundCastle = possibleNeighbors[Math.floor(Math.random() * possibleNeighbors.length)];
+            let tries = 0;
+            while (tries < 50) {
 
-            // Random position around existing castle...
-            const distanceFromCastle = Math.floor((config.MIN_CASTLE_DISTANCE + config.MAX_CASTLE_DISTANCE) / 2);
-            const randomAngle = Math.random() * Math.PI * 2;
-            const x = Math.floor(distanceFromCastle * Math.cos(randomAngle) + aroundCastle.x);
-            const y = Math.floor(distanceFromCastle * Math.sin(randomAngle) + aroundCastle.y);
-            position = {x, y};
+                // Random position around existing castle...
+                const distanceFromCastle = Math.floor((config.MIN_CASTLE_DISTANCE + config.MAX_CASTLE_DISTANCE) / 2);
+                const randomAngle = Math.random() * Math.PI * 2;
+                const x = Math.floor(distanceFromCastle * Math.cos(randomAngle) + aroundCastle.x);
+                const y = Math.floor(distanceFromCastle * Math.sin(randomAngle) + aroundCastle.y);
+                position = {x, y};
+
+                //  Check that new chossen position is not too close to another castle.
+                if (!castles.some(c => tool.positionDistance(c, {x, y}) < config.MIN_CASTLE_DISTANCE)) {
+                    break;
+                }
+                tries++;
+            }
         }
         try {
             castleService.create(position, user);
@@ -83,16 +92,29 @@ const self = {
         timer.start("KI_BUILD_WAREHOUSE");
         const {user} = playersData[playerName];
         const castles = castleService.getAllOfUser(user);
+        const warehouses = warehouseService.getAllOfUser(user);
         if (castles.length < 2) {
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
-        const firstCastle = castles[Math.floor(Math.random() * castles.length)];
-        const secondCastle = castles.find(c => firstCastle.x !== c.x && firstCastle.y !== c.y && tool.positionDistance(firstCastle, c) < config.MAX_CASTLE_DISTANCE);
-        if (firstCastle && secondCastle) {
-            const position = {
-                x: Math.round((firstCastle.x + secondCastle.x) / 2),
-                y: Math.round((firstCastle.y + secondCastle.y) / 2)
-            };
+        let tries = 0;
+        let firstCastle, secondCastle, position;
+        while (tries < 50) {
+            firstCastle = castles[Math.floor(Math.random() * castles.length)];
+            secondCastle = castles.find(c => firstCastle.x !== c.x && firstCastle.y !== c.y && tool.positionDistance(firstCastle, c) < config.MAX_CASTLE_DISTANCE);
+            if (firstCastle && secondCastle) {
+                position = {
+                    x: Math.round((firstCastle.x + secondCastle.x) / 2),
+                    y: Math.round((firstCastle.y + secondCastle.y) / 2)
+                };
+                if (!warehouses.some(w => w.x === position.x && w.y === position.y)) {
+                    break;
+                } else {
+                    position = undefined;
+                }
+            }
+            tries++;
+        }
+        if (firstCastle && secondCastle && position) {
             try {
                 warehouseService.create({
                     x: position.x,

@@ -4,6 +4,18 @@ const event = require("../lib/event");
 event.on(event.CASTLE_CREATED, ({userId, x, y}) => {
     setTimeout(() => {
         console.log("[questService] Castle created: ", userId, x, y);
+        const {count} = database
+            .prepare(`select count(*) as count
+                      from castle
+                      where user_id = @userId
+                        and x = @x
+                        and y = @y;`)
+            .get({
+                userId, x, y
+            });
+        if (count === 1) {
+            console.log("[questService] User solved quest. Castles count: ", count);
+        }
     });
 });
 
