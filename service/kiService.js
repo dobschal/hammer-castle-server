@@ -47,7 +47,7 @@ const self = {
         const {user} = playersData[playerName];
         const price = priceService.nextCastlePrice(user.id);
         if (user.max_hammers < price) {
-            console.log("[kiService] Build warehouse next, cause max hammers is too low...");
+            console.log("[kiService] Build warehouse next, cause max hammers is too low...", playerName);
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (user.hammer < price) {
@@ -82,7 +82,7 @@ const self = {
             console.log("[kiService] KI player " + playerName + " build castle at: ", position.x, position.y);
             setTimeout(() => self.buildWarehouse(playerName), timeout);
         } catch (e) {
-            console.log("[kiService] Failed to build castle.", e.message);
+            console.log("[kiService] Failed to build castle.", playerName, e.message);
             setTimeout(() => self.buildCastle(playerName), timeout);
         }
         timer.end("KI_BUILD_CASTLE");
@@ -93,6 +93,10 @@ const self = {
         const {user} = playersData[playerName];
         const castles = castleService.getAllOfUser(user);
         const warehouses = warehouseService.getAllOfUser(user);
+        const price = priceService.nextWarehousePrice(user.id)
+        if (user.hammer < price) {
+            return setTimeout(() => self.buildWarehouse(playerName), timeout);
+        }
         if (castles.length < 2) {
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
@@ -126,11 +130,11 @@ const self = {
                 }, user);
                 setTimeout(() => self.buildCastle(playerName), timeout);
             } catch (e) {
-                console.log("[kiService] Failed to build warehouse.", e.message);
+                console.log("[kiService] Failed to build warehouse.", playerName, e.message);
                 setTimeout(() => self.buildWarehouse(playerName), timeout);
             }
         } else {
-            console.log("[kiService] No place for new warehouse found...");
+            console.log("[kiService] No place for new warehouse found...", playerName);
             setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         timer.end("KI_BUILD_WAREHOUSE");
