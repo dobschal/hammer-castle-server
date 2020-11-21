@@ -2,6 +2,7 @@ const userService = require("./userService");
 const castleService = require("./castleService");
 const priceService = require("./priceService");
 const warehouseService = require("./warehouseService");
+const blockAreaService = require("./blockAreaService");
 const config = require("../config");
 const timer = require("../lib/timer");
 const tool = require("../lib/tool");
@@ -70,19 +71,30 @@ const self = {
                 const y = Math.floor(distanceFromCastle * Math.sin(randomAngle) + aroundCastle.y);
                 position = {x, y};
 
-                //  Check that new chossen position is not too close to another castle.
-                if (!castles.some(c => tool.positionDistance(c, {x, y}) < config.MIN_CASTLE_DISTANCE)) {
+                //  Check that new chosen position is not too close to another castle.
+                if (!castles.some(c => tool.positionDistance(c, {
+                    x,
+                    y
+                }) < config.MIN_CASTLE_DISTANCE) && !blockAreaService.isInsideBlockArea(position)) {
                     break;
+                } else {
+                    position = undefined;
                 }
+
                 tries++;
             }
         }
-        try {
-            castleService.create(position, user);
-            console.log("[kiService] KI player " + playerName + " build castle at: ", position.x, position.y);
-            setTimeout(() => self.buildWarehouse(playerName), timeout);
-        } catch (e) {
-            console.log("[kiService] Failed to build castle.", playerName, e.message);
+        if (position) {
+            try {
+                castleService.create(position, user);
+                console.log("[kiService] KI player " + playerName + " build castle at: ", position.x, position.y);
+                setTimeout(() => self.buildWarehouse(playerName), timeout);
+            } catch (e) {
+                console.log("[kiService] Failed to build castle.", playerName, e.message);
+                setTimeout(() => self.buildCastle(playerName), timeout);
+            }
+        } else {
+            console.log("[kiService] Didn't find position for new castle: ", playerName);
             setTimeout(() => self.buildCastle(playerName), timeout);
         }
         timer.end("KI_BUILD_CASTLE");
