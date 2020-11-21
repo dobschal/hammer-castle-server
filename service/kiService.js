@@ -52,6 +52,7 @@ const self = {
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (user.hammer < price) {
+            console.log("[kiService] KI Player hos not enough hammer for a castle: ", playerName);
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
         const castles = castleService.getAllOfUser(user);
@@ -107,6 +108,7 @@ const self = {
         const warehouses = warehouseService.getAllOfUser(user);
         const price = priceService.nextWarehousePrice(user.id)
         if (user.hammer < price) {
+            console.log("[kiService] KI Player hos not enough hammer for warehouse: ", playerName);
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (castles.length < 2) {
