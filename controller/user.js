@@ -46,9 +46,7 @@ router.get("/current", hasUserRole(["USER"]), function (req, res) {
 
 router.post("/daily-reward", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
-  if (user.last_daily_reward_claim < Date.now() - 1000 * 60 * 60 * 24) {
-    userService.claimDailyReward(user);
-  }
+  userService.claimDailyReward(user);
   res.send({success: true});
 });
 

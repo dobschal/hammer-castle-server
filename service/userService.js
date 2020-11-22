@@ -140,6 +140,9 @@ function checkIpForRegistration(ip) {
  * @param {UserEntity} user
  */
 function claimDailyReward(user) {
+    if (user.last_daily_reward_claim >= Date.now() - 1000 * 60 * 60 * 24) {
+        throw ConflictError("Daily reward already claimed!");
+    }
     db.prepare("UPDATE user SET hammer=?, last_daily_reward_claim=?, beer = ? WHERE id=?")
         .run(user.max_hammers, Date.now(), Math.min(user.beer + 50, user.max_beer), user.id);
     const actionLogService = require("./actionLogService");
