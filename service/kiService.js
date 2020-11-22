@@ -45,7 +45,7 @@ const self = {
 
     buildCastle(playerName) {
         timer.start("KI_BUILD_CASTLE");
-        const {user} = playersData[playerName];
+        const user = userService.getByUsername(playerName);
         const price = priceService.nextCastlePrice(user.id);
         if (user.max_hammers < price) {
             console.log("[kiService] Build warehouse next, cause max hammers is too low...", playerName);
@@ -105,7 +105,7 @@ const self = {
 
     buildWarehouse(playerName) {
         timer.start("KI_BUILD_WAREHOUSE");
-        const {user} = playersData[playerName];
+        const user = userService.getByUsername(playerName);
         const castles = castleService.getAllOfUser(user);
         const warehouses = warehouseService.getAllOfUser(user);
         const price = priceService.nextWarehousePrice(user.id)
