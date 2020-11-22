@@ -9,7 +9,7 @@ const timer = require("../lib/timer");
 const tool = require("../lib/tool");
 const players = ["Mischa", "Luni", "Johnny", "Pete"];
 const playersData = {};
-const timeout = 10000;
+const timeout = 30000;
 
 const self = {
 
