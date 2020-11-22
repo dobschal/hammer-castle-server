@@ -7,7 +7,7 @@ const catapultService = require("./catapultService");
 const config = require("../config");
 const timer = require("../lib/timer");
 const tool = require("../lib/tool");
-const players = ["Mischa", "Luni", "Johnny", "Pete"];
+const players = ["Mischa", "Luni", "Johnny", "Pete", "Lelek"];
 const playersData = {};
 const timeout = 30000;
 
