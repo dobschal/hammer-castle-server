@@ -8,7 +8,7 @@ const timer = require("../lib/timer");
 const tool = require("../lib/tool");
 const players = ["Mischa", "Luni", "Johnny", "Pete"];
 const playersData = {};
-const timeout = 60000;
+const timeout = 10000;
 
 const self = {
 
@@ -53,7 +53,7 @@ const self = {
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         if (user.hammer < price) {
-            console.log("[kiService] KI Player hos not enough hammer for a castle: ", playerName);
+            console.log("[kiService] KI Player hos not enough hammer for a castle: ", playerName, user.hammer, price);
             timer.end("KI_BUILD_CASTLE", playerName);
             return setTimeout(() => self.buildCastle(playerName), timeout);
         }
@@ -110,7 +110,7 @@ const self = {
         const warehouses = warehouseService.getAllOfUser(user);
         const price = priceService.nextWarehousePrice(user.id)
         if (user.hammer < price) {
-            console.log("[kiService] KI Player hos not enough hammer for warehouse: ", playerName);
+            console.log("[kiService] KI Player hos not enough hammer for warehouse: ", playerName, user.hammer, price);
             timer.end("KI_BUILD_WAREHOUSE", playerName);
             return setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
