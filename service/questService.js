@@ -15,6 +15,22 @@ event.on(event.CASTLE_CREATED, ({userId, x, y}) => {
             });
         if (count === 1) {
             console.log("[questService] User solved quest. Castles count: ", count);
+            const quest = self.getByUserIdAndQuestId("FIRST_CASTLE", userId);
+            if (quest && quest.status.includes("OPEN")) {
+                database
+                    .prepare(`update user_quest
+                              set status='SOLVED_NEW'
+                              where questId = @questId
+                                and userId = @userId`)
+                    .run({questId: quest.id, userId});
+
+                // TODO: Send websocket event!!!
+
+                // TODO: Give user the reward!!!
+
+                // TODO: Make that generic!!!
+
+            }
         }
     });
 });
@@ -115,7 +131,7 @@ const self = {
     },
 
     /**
-     * @param {number} questId
+     * @param {string} questId
      * @param {number} userId
      * @return {(QuestEntity & UserQuestEntity)}
      */
@@ -133,7 +149,7 @@ const self = {
     },
 
     /**
-     * @param {number} questId
+     * @param {string} questId
      * @param {UserEntity} user
      * @return {Boolean}
      */

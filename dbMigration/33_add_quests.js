@@ -1,11 +1,12 @@
 const db = require("../lib/database");
 
 module.exports = function () {
-    db.prepare(`insert into quest (isRecurring, titleKey, messageKey, imageName,
+    db.prepare(`insert into quest (id, isRecurring, titleKey, messageKey, imageName,
                                    benefitType, benefitValue)
                 VALUES (@isRecurring, @titleKey, @messageKey, @imageName,
                         @benefitType, @benefitValue)`)
         .run({
+            id: "FIRST_CASTLE",
             isRecurring: 0,
             titleKey: "quest.firstCastle.title",
             messageKey: "quest.firstCastle.message",
@@ -19,6 +20,7 @@ module.exports = function () {
                 VALUES (@isRecurring, @recurringInterval, @titleKey, @messageKey, @imageName,
                         @benefitType)`)
         .run({
+            id: "DAILY_REWARD",
             isRecurring: 1,
             recurringInterval: "DAILY",
             titleKey: "quest.dailyLogin.title",
