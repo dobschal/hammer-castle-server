@@ -3,6 +3,7 @@ const castleService = require("./castleService");
 const priceService = require("./priceService");
 const warehouseService = require("./warehouseService");
 const blockAreaService = require("./blockAreaService");
+const catapultService = require("./catapultService");
 const config = require("../config");
 const timer = require("../lib/timer");
 const tool = require("../lib/tool");
@@ -43,9 +44,26 @@ const self = {
         };
     },
 
+    /**
+     * @param {UserEntity} user
+     */
+    claimDailyReward(user) {
+        try {
+            userService.claimDailyReward(user);
+            console.log("[kiService] User got daily reward: ", user.username);
+            return true;
+        } catch (e) {
+            console.log("[kiService] No daily reward: ", user.username);
+        }
+        return false;
+    },
+
     buildCastle(playerName) {
         timer.start("KI_BUILD_CASTLE");
-        const user = userService.getByUsername(playerName);
+        let user = userService.getByUsername(playerName);
+        if (self.claimDailyReward(user)) {
+            user = userService.getByUsername(playerName);
+        }
         const price = priceService.nextCastlePrice(user.id);
         if (user.max_hammers < price) {
             console.log("[kiService] Build warehouse next, cause max hammers is too low...", playerName);
@@ -75,10 +93,10 @@ const self = {
                 position = {x, y};
 
                 //  Check that new chosen position is not too close to another castle.
-                if (!castles.some(c => tool.positionDistance(c, {
-                    x,
-                    y
-                }) < config.MIN_CASTLE_DISTANCE) && !blockAreaService.isInsideBlockArea(position)) {
+                const tooCloseToOtherCastle = castleService
+                    .getNeighborCastles(position)
+                    .some(c => tool.positionDistance(c, position) < config.MIN_CASTLE_DISTANCE);
+                if (!tooCloseToOtherCastle && !blockAreaService.isInsideBlockArea(position)) {
                     break;
                 } else {
                     position = undefined;
@@ -146,7 +164,7 @@ const self = {
                     castle2X: secondCastle.x,
                     castle2Y: secondCastle.y
                 }, user);
-                setTimeout(() => self.buildCastle(playerName), timeout);
+                setTimeout(() => self.buildCatapult(playerName), timeout);
             } catch (e) {
                 console.log("[kiService] Failed to build warehouse.", playerName, e.message);
                 setTimeout(() => self.buildWarehouse(playerName), timeout);
@@ -156,6 +174,53 @@ const self = {
             setTimeout(() => self.buildWarehouse(playerName), timeout);
         }
         timer.end("KI_BUILD_WAREHOUSE", playerName);
+    },
+
+    buildCatapult(playerName) {
+        timer.start("KI_BUILD_CATAPULT");
+        const user = userService.getByUsername(playerName);
+        const price = priceService.nextCatapultPrice(user.id);
+        if (user.max_hammers < price) {
+            console.log("[kiService] Max hammers less than catapult price: ", playerName, price, user.max_hammers);
+            timer.end("KI_BUILD_CATAPULT", playerName);
+            return setTimeout(() => self.buildWarehouse(playerName), timeout);
+        }
+        if (user.hammer < price) {
+            console.log("[kiService] Hammers less than catapult price: ", playerName, price, user.max_hammers);
+            timer.end("KI_BUILD_CATAPULT", playerName);
+            return setTimeout(() => self.buildCatapult(playerName), timeout);
+        }
+        const castles = castleService.getAllOfUser(user);
+        let opponentNeighbor, castle;
+        for (let i = 0; i < castles.length; i++) {
+            const neighbors = castleService.getNeighborCastles(castles[i]);
+            opponentNeighbor = neighbors.find(nc => nc.userId !== user.id);
+            if (opponentNeighbor) {
+                castle = castles[i];
+                break;
+            }
+        }
+        if (castle && opponentNeighbor) {
+            const x = Math.round((castle.x + opponentNeighbor.x) / 2);
+            const y = Math.round((castle.y + opponentNeighbor.y) / 2);
+            try {
+                catapultService.create({
+                    x,
+                    y,
+                    userCastleX: castle.x,
+                    userCastleY: castle.y,
+                    opponentCastleX: opponentNeighbor.x,
+                    opponentCastleY: opponentNeighbor.y
+                }, user);
+                console.log("[kiService] Build catapult! ", playerName);
+            } catch (e) {
+                console.log("[kiService] Failed to build catapult: ", e.message);
+            }
+        } else {
+            console.log("[kiService] Failed to build catapult, no opponent castle.");
+        }
+        setTimeout(() => self.buildCastle(playerName), timeout);
+        timer.end("KI_BUILD_CATAPULT", playerName);
     }
 };
 

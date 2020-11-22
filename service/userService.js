@@ -153,11 +153,9 @@ function claimDailyReward(user) {
         }, "CLAIMED_DAILY_REWARD");
     const websocket = require("./websocketService");
     if (websocket.connections[user.username]) {
-
-        // TODO: send beer update
-
         websocket.connections[user.username].emit("UPDATE_USER", {
             hammer: user.max_hammers,
+            beer: user.beer + 50,
             last_daily_reward_claim: Date.now()
         });
     }
