@@ -53,10 +53,10 @@ function createRandomBlockArea(aroundCastle, castlesInDistance) {
     if (c) {
         console.log("[blockArea] Castle inside new block area, so skip... ", c);
     } else {
-        const closedBlockAreas = getBlockAreasInDistance({x, y}, config.BLOCK_AREA_SIZE);
+        const closedBlockAreas = getBlockAreasInDistance({x, y}, config.BLOCK_AREA_SIZE * 2);
         console.log("[blockArea] Close areas: ", closedBlockAreas);
         if (closedBlockAreas.length === 0) {
-            const blockArea = createBlockArea({x, y}, "FOREST");
+            const blockArea = createBlockArea({x, y}, Math.random() >= 0.5 ? "FOREST" : "MOUNTAIN");
             console.log("[blockArea] Created new block area!: ", blockArea);
             return blockArea;
         }

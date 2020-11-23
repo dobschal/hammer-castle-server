@@ -5,7 +5,7 @@ const isDev = Boolean(process.env.IS_DEV);
 module.exports = {
 
     MAX_FARM_RESOURCES_HOURS: 3, // clip after 3 hours of gathering
-    BLOCK_AREA_SIZE: 200, // Radius!, should be max castle distance
+    BLOCK_AREA_SIZE: 200, // Radius!
 
     // - - - - - - - - - - - - Security - - - - - - - - - - - - //
 

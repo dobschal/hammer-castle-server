@@ -1,9 +1,13 @@
 const database = require("../lib/database");
 const event = require("../lib/event");
+const websocketService = require("../service/websocketService");
+const userService = require("../service/userService");
+const ConflictError = require("../error/ConflictError");
 
 event.on(event.CASTLE_CREATED, ({userId, x, y}) => {
     setTimeout(() => {
-        console.log("[questService] Castle created: ", userId, x, y);
+        console.log("[questService] Castle created, check quests: ", userId, x, y);
+        const user = userService.getById(userId);
         const {count} = database
             .prepare(`select count(*) as count
                       from castle
@@ -23,13 +27,9 @@ event.on(event.CASTLE_CREATED, ({userId, x, y}) => {
                               where questId = @questId
                                 and userId = @userId`)
                     .run({questId: quest.id, userId});
-
-                // TODO: Send websocket event!!!
-
-                // TODO: Give user the reward!!!
-
-                // TODO: Make that generic!!!
-
+                websocketService.sendTo(user.username, "UPDATE_QUEST", {
+                    status: "SOLVED_NEW"
+                });
             }
         }
     });
@@ -51,7 +51,7 @@ const self = {
         //  An internal event happened, so that quest got solved,
         //  but the hasn't seen that yet and has not claimed the
         //  benefit.
-        SOLVED: "SOLVED_NEW",
+        SOLVED_NEW: "SOLVED_NEW",
 
         //  Done. Benefit claimed and quest solved.
         SOLVED_SEEN: "SOLVED_SEEN"
@@ -162,6 +162,57 @@ const self = {
                         and userId = @userId`)
             .run({questId, userId: user.id});
         return changes === 1;
+    },
+
+    /**
+     * @param {string} questId
+     * @param {UserEntity} user
+     * @return {Boolean}
+     */
+    claimReward(questId, user) {
+        const query = `select *
+                       from user_quest uq
+                                join quest q on uq.questId = q.id
+                       where uq.questId = @questId
+                         and uq.userId = @userId;`
+        /** @type {(QuestEntity & UserQuestEntity)} */
+        const userQuest = database
+            .prepare(query)
+            .get({questId, userId: user.id});
+        if (!userQuest || userQuest.status !== self.status.SOLVED_NEW) {
+            throw new ConflictError("Quest claim failed.");
+        }
+        switch (userQuest.benefitType) {
+            case "HAMMER":
+                database
+                    .prepare(`UPDATE user
+                              SET hammer = hammer + @hammer
+                              WHERE id = @userId`)
+                    .run({userId: user.id, hammer: userQuest.benefitValue});
+                const {hammer} = database
+                    .prepare(`select hammer
+                              from user
+                              where id = @userId`)
+                    .get({userId: user.id});
+                websocketService.sendTo(user.username, "UPDATE_USER", {hammer});
+                break;
+            case "BEER":
+                database
+                    .prepare(`UPDATE user
+                              SET beer = beer + @beer
+                              WHERE id = @userId`)
+                    .run({userId: user.id, beer: userQuest.benefitValue});
+                const {beer} = database
+                    .prepare(`select beer
+                              from user
+                              where id = @userId`)
+                    .get({userId: user.id});
+                websocketService.sendTo(user.username, "UPDATE_USER", {beer});
+                break;
+            default:
+                throw new Error("Internal server error, benefit type of quest is not correct! " + userQuest.benefitType);
+        }
+
     }
 };
 
