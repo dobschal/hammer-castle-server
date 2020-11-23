@@ -75,7 +75,7 @@ files.forEach(function (filename) {
 const http = require("http").createServer(app);
 const {connections} = require("./service/websocketService").init(http);
 setInterval(() => {
-  console.log("[app] Websocket connections: ", Object.keys(connections).length);
+  console.log("[app] Websocket connections: ", Object.keys(connections).join(", "));
   Object.keys(connections).forEach(username => {
     connections[username].emit("HEARTBEAT", {username});
   });
