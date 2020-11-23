@@ -27,7 +27,6 @@ router.get("/price", hasUserRole(["USER"]), function (req, res) {
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {
     if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
-        console.log("[catapult] Get catapults in area: ", req.query);
         res.send(catapultService.getCatapultsFromTo(
             Number(req.query.fromX),
             Number(req.query.fromY),

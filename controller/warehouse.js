@@ -50,7 +50,6 @@ router.get("/amount", hasUserRole(["USER"]), function (req, res) {
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {
     if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
-        console.log("[warehouse] Get warehouses in area: ", req.query);
         res.send(warehouseService.getWarehousesFromTo(
             Number(req.query.fromX),
             Number(req.query.fromY),

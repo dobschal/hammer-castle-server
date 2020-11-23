@@ -45,13 +45,11 @@ router.post("/change-name", hasUserRole(["USER"]), function (req, res) {
 
 router.get("/", hasUserRole(["USER"]), function (req, res) {
   if ("fromX" in req.query && "fromY" in req.query && "toX" in req.query && "toY" in req.query) {
-    timer.start("GET_CASTLES");
     res.send(castleService.getCastlesFromTo(
         Number(req.query.fromX),
         Number(req.query.fromY),
         Number(req.query.toX),
         Number(req.query.toY)));
-    timer.end("GET_CASTLES");
   } else {
     res.send(castleService.getAll());
   }
