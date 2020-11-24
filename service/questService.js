@@ -4,36 +4,12 @@ const websocketService = require("../service/websocketService");
 const userService = require("../service/userService");
 const ConflictError = require("../error/ConflictError");
 
-event.on(event.CASTLE_CREATED, ({userId, x, y}) => {
-    setTimeout(() => {
-        console.log("[questService] Castle created, check quests: ", userId, x, y);
-        const user = userService.getById(userId);
-        const {count} = database
-            .prepare(`select count(*) as count
-                      from castle
-                      where user_id = @userId
-                        and x = @x
-                        and y = @y;`)
-            .get({
-                userId, x, y
-            });
-        if (count === 1) {
-            console.log("[questService] User solved quest. Castles count: ", count);
-            const quest = self.getByUserIdAndQuestId("FIRST_CASTLE", userId);
-            if (quest && quest.status.includes("OPEN")) {
-                database
-                    .prepare(`update user_quest
-                              set status='SOLVED_NEW'
-                              where questId = @questId
-                                and userId = @userId`)
-                    .run({questId: quest.id, userId});
-                websocketService.sendTo(user.username, "UPDATE_QUEST", {
-                    status: "SOLVED_NEW"
-                });
-            }
-        }
-    });
-});
+//  Logic:
+//  Each quest record has an dedicated event.
+//  No recurring quests!
+//  Each event needs param 1 to have a property userId!
+//  On server app start event listeners are attached for each quest record
+//  A separate quest_condition table controls the quest solved state
 
 const self = {
 
@@ -57,18 +33,84 @@ const self = {
         SOLVED_SEEN: "SOLVED_SEEN"
     },
 
+    conditionResolver: {
+
+        /**
+         * @param {QuestEntity} quest
+         * @param {QuestConditionEntity} condition
+         * @param {number} userId
+         * @param {*} [props]
+         * @return {boolean}
+         */
+        AMOUNT_OF_CASTLES(quest, condition, userId, props) {
+            const {count} = database
+                .prepare("select count(*) as count from castle where user_id = @userId")
+                .get({userId});
+            return count >= parseInt(condition.value);
+        }
+    },
+
+    init() {
+        console.log("[questService] Initialise quest event listeners.");
+        database
+            .prepare("select * from quest")
+            .all()
+            .forEach(/** @param {QuestEntity} quest */quest => {
+                if (!(quest.eventName in event)) {
+                    return console.error("[quest] The quest '" + quest.id + "' has an unknown event name '" + quest.eventName + "'.");
+                }
+                const conditions = database
+                    .prepare("select * from quest_condition where questId=@questId;")
+                    .all({questId: quest.id});
+                event.on(quest.eventName, ({userId, ...props}) => {
+                    if (!userId) {
+                        return console.error("[quest] The event '" + quest.eventName + "' does not provide the property userId at param 1. This is needed for quest handling!");
+                    }
+                    const {count} = database
+                        .prepare("select count(*) as count from user_quest where userId=@userId and questId=@questId and status in ('OPEN_NEW', 'OPEN_SEEN')")
+                        .get({userId, questId: quest.id});
+                    if (count > 0) {
+                        self.handleQuestRelatedEvent(quest, conditions, userId, props);
+                    } else {
+                        console.log("[questService] User has no related quest on action.");
+                    }
+                });
+            });
+    },
+
+    /**
+     * @param {QuestEntity} quest
+     * @param {QuestConditionEntity[]} conditions
+     * @param {number} userId
+     * @param {*} [props]
+     */
+    handleQuestRelatedEvent(quest, conditions, userId, props) {
+        console.log("[questService] Quest event triggered: ", quest, conditions, userId, props);
+        const hasUnresolvedCondition = conditions.some(/** @param {QuestConditionEntity} condition */condition => {
+            return !self.conditionResolver[condition.key](quest, condition, userId, props);
+        });
+        if (!hasUnresolvedCondition) {
+            database
+                .prepare("update user_quest set status='SOLVED_NEW' where questId = @questId and userId = @userId")
+                .run({questId: quest.id, userId});
+            const {username} = database
+                .prepare("select username from user where id=@userId;")
+                .get({userId});
+            websocketService.sendTo(username, "UPDATE_QUEST", {
+                status: "SOLVED_NEW"
+            });
+        }
+    },
+
     /**
      * @param {number} userId
      * @return {(QuestEntity & UserQuestEntity)[]}
      */
     getNextQuests(userId) {
         const quests = self.getUnsolvedQuests(userId);
-        if (quests.length === 0) {
-            quests.push(self.getStartQuest(userId));
-        } else {
-            if (!quests.some(q => !q.isRecurring && q.status !== self.status.SOLVED_SEEN)) {
-                quests.push(self.getNextNonRecurringQuest(userId));
-            }
+        if (!quests.some(q => q.status !== self.status.SOLVED_SEEN)) {
+            const quest = self.getNextQuest(userId);
+            if (quest) quests.push(quest);
         }
         return quests;
     },
@@ -94,8 +136,7 @@ const self = {
         const [quest] = database
             .prepare(`select *
                       from quest
-                      where isRecurring = 0
-                        and prevQuestId IS NULL
+                      where prevQuestId IS NULL
                       LIMIT 1`).all();
         database
             .prepare(`insert into user_quest (questId, userId, timestamp, status)
@@ -111,9 +152,9 @@ const self = {
 
     /**
      * @param {number} userId
-     * @return {(QuestEntity & UserQuestEntity)}
+     * @return {(QuestEntity & UserQuestEntity)|void}
      */
-    getNextNonRecurringQuest(userId) {
+    getNextQuest(userId) {
         const [lastSolvedQuest] = database
             .prepare(`select *
                       from user_quest uq
@@ -121,12 +162,15 @@ const self = {
                       where uq.userId = @userId
                       order by uq.timestamp desc
                       limit 1`).all({userId});
+        if (!lastSolvedQuest) {
+            return self.getStartQuest(userId);
+        }
         const [quest] = database
             .prepare(`select *
                       from quest
-                      where isRecurring = 0
-                        and prevQuestId = ?
+                      where prevQuestId = ?
                       LIMIT 1`).all(lastSolvedQuest.id);
+        if (!quest) return;
         return self.getByUserIdAndQuestId(quest.id, userId);
     },
 
@@ -173,7 +217,8 @@ const self = {
         const query = `select *
                        from user_quest uq
                                 join quest q on uq.questId = q.id
-                       where uq.questId = @questId
+                       where uq.status = 'SOLVED_NEW'
+                         and uq.questId = @questId
                          and uq.userId = @userId;`
         /** @type {(QuestEntity & UserQuestEntity)} */
         const userQuest = database
@@ -182,6 +227,15 @@ const self = {
         if (!userQuest || userQuest.status !== self.status.SOLVED_NEW) {
             throw new ConflictError("Quest claim failed.");
         }
+        database
+            .prepare(`UPDATE user_quest
+                      SET status='SOLVED_SEEN'
+                      WHERE questId = @questId
+                        and userId = @userId`)
+            .run({userId: user.id, questId: questId});
+        websocketService.sendTo(user.username, "UPDATE_QUEST", {
+            status: "SOLVED_SEEN"
+        });
         switch (userQuest.benefitType) {
             case "HAMMER":
                 database
@@ -213,7 +267,11 @@ const self = {
                 throw new Error("Internal server error, benefit type of quest is not correct! " + userQuest.benefitType);
         }
 
+        // TODO: add action log with live preview to show the user the reward...
+
     }
 };
+
+self.init();
 
 module.exports = self;

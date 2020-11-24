@@ -3,8 +3,7 @@ module.exports = {
     properties: {
         id: {type: "number"},
         prevQuestId: {type: "number"},
-        isRecurring: {type: "number"},
-        recurringInterval: {type: "string"},
+        eventName: {type: "string"},
         titleKey: {type: "string"},
         messageKey: {type: "string"},
         imageName: {type: "string"},

@@ -19,4 +19,12 @@ router.post("/read", hasUserRole(["USER"]), function (req, res) {
     res.send({success: questService.readQuest(requestBody.questId, user)});
 });
 
+router.post("/claim", hasUserRole(["USER"]), function (req, res) {
+    const requestBody = req.body;
+    schema.is(requestBody, "request/ReadQuest"); // same ...
+    const user = userService.currentUser(req);
+    schema.is(user, "entity/User");
+    res.send({success: questService.claimReward(requestBody.questId, user)});
+});
+
 module.exports = router;

@@ -87,13 +87,20 @@
  * @type {object}
  * @property {number} id
  * @property {number} prevQuestId
- * @property {number} isRecurring
- * @property {string} recurringInterval
+ * @property {string} eventName
  * @property {string} titleKey
  * @property {string} messageKey
  * @property {string} imageName
  * @property {string} benefitType
  * @property {number} benefitValue
+ */
+/**
+ * @typedef QuestConditionEntity
+ * @type {object}
+ * @property {string} questId
+ * @property {string} key
+ * @property {string} value
+ * @property {string} valueType
  */
 /**
  * @typedef UserEntity
@@ -211,6 +218,11 @@
  * @property {number} x - required
  * @property {number} y - required
  * @property {number} knightId - required
+ */
+/**
+ * @typedef ReadQuestRequest
+ * @type {object}
+ * @property {string} questId - required
  */
 /**
  * @typedef UpdateCategoryRequest

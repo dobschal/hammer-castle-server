@@ -1,5 +1,4 @@
 const statsService = require("./service/statsService");
-const priceService = require("./service/priceService");
 const castleService = require("./service/castleService");
 const catapultService = require("./service/catapultService");
 const hammerService = require("./service/hammerService");
