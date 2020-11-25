@@ -1,7 +1,6 @@
 const database = require("../lib/database");
 const event = require("../lib/event");
 const websocketService = require("../service/websocketService");
-const userService = require("../service/userService");
 const ConflictError = require("../error/ConflictError");
 
 //  Logic:
@@ -97,7 +96,8 @@ const self = {
                 .prepare("select username from user where id=@userId;")
                 .get({userId});
             websocketService.sendTo(username, "UPDATE_QUEST", {
-                status: "SOLVED_NEW"
+                status: "SOLVED_NEW",
+                id: quest.id
             });
         }
     },
@@ -138,16 +138,24 @@ const self = {
                       from quest
                       where prevQuestId IS NULL
                       LIMIT 1`).all();
+        self.setupUserQuest(quest.id, userId);
+        return self.getByUserIdAndQuestId(quest.id, userId);
+    },
+
+    /**
+     * @param {string} questId
+     * @param {number} userId
+     */
+    setupUserQuest(questId, userId) {
         database
             .prepare(`insert into user_quest (questId, userId, timestamp, status)
                       values (@questId, @userId, @timestamp, @status)`)
             .run({
-                questId: quest.id,
+                questId,
                 userId,
                 timestamp: Date.now(),
                 status: self.status.OPEN_NEW
             });
-        return self.getByUserIdAndQuestId(quest.id, userId);
     },
 
     /**
@@ -171,6 +179,7 @@ const self = {
                       where prevQuestId = ?
                       LIMIT 1`).all(lastSolvedQuest.id);
         if (!quest) return;
+        self.setupUserQuest(quest.id, userId);
         return self.getByUserIdAndQuestId(quest.id, userId);
     },
 
@@ -234,7 +243,8 @@ const self = {
                         and userId = @userId`)
             .run({userId: user.id, questId: questId});
         websocketService.sendTo(user.username, "UPDATE_QUEST", {
-            status: "SOLVED_SEEN"
+            status: "SOLVED_SEEN",
+            id: questId
         });
         switch (userQuest.benefitType) {
             case "HAMMER":

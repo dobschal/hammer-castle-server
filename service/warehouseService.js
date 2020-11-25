@@ -67,11 +67,17 @@ function create(warehouseRequestBody, user) {
         websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
     }
     websocket.broadcast("NEW_WAREHOUSE", warehouse);
-    actionLogService.save("You built a warehouse.", user.id, user.username, {x, y}, "BUILD_WAREHOUSE");
+    actionLogService.save("You built a warehouse.", user.id, user.username, {
+        x,
+        y
+    }, "BUILD_WAREHOUSE");
     castleService.actionLogToNeighbours({
         x,
         y
     }, user.id, "OPPONENT_BUILD_WAREHOUSE", () => `${user.username} build a warehouse.`);
+
+    // TODO: Add event emitter for warehouse created!
+
     return warehouse;
 }
 

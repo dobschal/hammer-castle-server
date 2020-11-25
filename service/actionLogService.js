@@ -1,6 +1,7 @@
 const websocket = require("./websocketService");
 const db = require("../lib/database");
 const event = require("../lib/event.js");
+const shortMessageService = require("./shortMessageService");
 
 event.on(event.USER_CONNECTED,
     /**
@@ -37,6 +38,7 @@ module.exports = {
         if (websocket.connections[username]) {
             websocket.connections[username].emit("NEW_ACTION_LOG", {timestamp, content, user_id, x, y, type, id});
         }
+        shortMessageService.send(username, content, type, x, y);
     },
 
     /**
