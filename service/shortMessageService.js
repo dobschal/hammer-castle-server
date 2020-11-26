@@ -3,7 +3,9 @@ const tool = require("../lib/tool");
 const event = require("../lib/event.js");
 
 event.on(event.USER_CONNECTED, /** @param {UserEntity} user */user => {
-    self.send(user.username, user.username + " is online!", "USER_ONLINE", user.startX, user.startY);
+    Object.keys(websocketService.connections).forEach(username => {
+        self.send(username, user.username + " is online!", "USER_ONLINE", user.startX, user.startY);
+    });
 });
 
 const self = {
@@ -17,7 +19,7 @@ const self = {
      */
     send(username, message, type, x, y) {
         setTimeout(() => {
-            websocketService.broadcast("SHORT_MESSAGE", {
+            websocketService.sendTo(username, "SHORT_MESSAGE", {
                 id: tool.createRandomId(),
                 message,
                 type,
