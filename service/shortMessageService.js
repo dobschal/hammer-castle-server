@@ -17,7 +17,7 @@ const self = {
      */
     send(username, message, type, x, y) {
         setTimeout(() => {
-            websocketService.sendTo(username, "SHORT_MESSAGE", {
+            websocketService.broadcast("SHORT_MESSAGE", {
                 id: tool.createRandomId(),
                 message,
                 type,
