@@ -77,7 +77,7 @@ function authenticate({username, password}, ip) {
             `
         )
         .get(username);
-    if (!user) throw new UnauthorisedError("User not found.");
+    if (!user) throw new UnauthorisedError("error.userNotFound");
     if (password !== user.password)
         throw new UnauthorisedError("Wrong credentials.");
     delete user.password;

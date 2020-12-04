@@ -6,6 +6,7 @@ const hasUserRole = require("../filter/hasUserRole");
 const websocket = require("../service/websocketService");
 const requestIp = require('request-ip');
 const statsService = require("../service/statsService");
+const localeService = require("../service/localeService");
 
 router.get("/", hasUserRole(["ADMIN"]), function (req, res) {
   res.send(userService.getAllUsers());
@@ -38,6 +39,7 @@ router.post("/mark-as-home", hasUserRole(["USER"]), function (req, res) {
 router.get("/current", hasUserRole(["USER"]), function (req, res) {
   const user = userService.currentUser(req);
   if (user) {
+    localeService.updateLocale(user, req.headers.locale);
     delete user.password;
     delete user.email_verified;
   }

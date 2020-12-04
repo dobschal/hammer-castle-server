@@ -6,6 +6,7 @@ const logger = require("morgan");
 const db = require("./lib/database");
 const cors = require("cors");
 const scheduler = require("./scheduler");
+const localeService = require("./service/localeService");
 
 // To attach event listeners
 require("./service/userCastlePointsService");
@@ -44,10 +45,11 @@ files.forEach(function (filename) {
   );
 
   //  Error handler
-  app.use(`/api/${filename.replace(fileExtension, "").replace("index", "")}`, function (err, req, res, next) {
-    console.log("[app] Error response: ", err);
+  app.use(`/api/${filename.replace(fileExtension, "").replace("index", "")}`, function (err, req, res, next) { // the next is important here!!!
+    console.log("[app] Error response: ", req.headers.locale, err);
+    const errorMessage = localeService.translateError(err, req.headers.locale);
     res.status(err.status || 500).send({
-      message: err.message || "An unhandled error occurred.",
+      message: errorMessage,
       error: err
     });
   });

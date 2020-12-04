@@ -1,0 +1,5 @@
+{
+    "error": {
+        "userNotFound": "The user does not exist."
+    }
+}
