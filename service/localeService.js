@@ -36,6 +36,18 @@ const self = {
             return message || err.message;
         }
         return "An unhandled error occurred.";
+    },
+
+    /**
+     * @param {string} key
+     * @param {string} locale
+     * @param {string[]|number[]} params
+     * @return {string}
+     */
+    translate(key, locale, params) {
+        let message = _getObjectPropByPath(key, locales[locale]);
+        params.forEach(param => message = message.replace("{}", param));
+        return message;
     }
 };
 

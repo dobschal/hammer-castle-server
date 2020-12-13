@@ -93,6 +93,7 @@
  * @property {string} imageName
  * @property {string} benefitType
  * @property {number} benefitValue
+ * @property {number} autoOpen
  */
 /**
  * @typedef QuestConditionEntity
@@ -122,6 +123,7 @@
  * @property {number} last_daily_reward_claim
  * @property {number} beer
  * @property {number} max_beer
+ * @property {string} locale
  */
 /**
  * @typedef UserQuestEntity

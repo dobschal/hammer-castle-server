@@ -22,6 +22,9 @@ setTimeout(() => {
 
 event.on(event.CASTLE_DESTROYED, deletedCastle => {
     setTimeout(() => {
+
+        // TODO: check if deleted castle is home...
+
         const castle = getAllOfUserId(deletedCastle.userId)[0];
         if (!castle) return;
         const user = userService.getById(deletedCastle.userId);

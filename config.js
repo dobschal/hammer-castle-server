@@ -10,7 +10,7 @@ module.exports = {
     // - - - - - - - - - - - - Security - - - - - - - - - - - - //
 
     TOKEN_EXPIRATION: 1000 * 60 * 60 * 24,
-    USERS_PER_IP: 3,
+    USERS_PER_IP: isDev ? 30 : 3,
 
     // - - - - - - - - - - - - Scheduler Intervals - - - - - - - - - - - - //
 
@@ -42,7 +42,9 @@ module.exports = {
         CASTLE_POINTS_CHANGED: "CASTLE_POINTS_CHANGED",
         KNIGHT_MOVED: "KNIGHT_MOVED",
         KNIGHT_CREATED: "KNIGHT_CREATED",
-        KNIGHT_DESTROYED: "KNIGHT_DESTROYED"
+        KNIGHT_DESTROYED: "KNIGHT_DESTROYED",
+        WAREHOUSE_CREATED: "WAREHOUSE_CREATED",
+        WAREHOUSE_UPGRADED: "WAREHOUSE_UPGRADED"
     },
 
     // - - - - - - - - - - - - Castles - - - - - - - - - - - - //

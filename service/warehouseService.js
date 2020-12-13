@@ -3,6 +3,7 @@ const timer = require("../lib/timer");
 const db = require("../lib/database");
 const websocket = require("./websocketService");
 const castleService = require("./castleService");
+const event = require("../lib/event");
 let priceService;
 let userService;
 const CastleNotFoundError = require("../error/CastleNotFoundError");
@@ -61,6 +62,7 @@ function create(warehouseRequestBody, user) {
     db.prepare(`UPDATE user
                 SET hammer=?
                 WHERE id = ?`).run(user.hammer, user.id);
+    event.emit(event.WAREHOUSE_CREATED, {userId: user.id, x, y});
     const warehouse = getByPosition({x, y});
     const updatedUser = userService.updateUserValues(user.id);
     if (websocket.connections[user.username]) {
@@ -75,9 +77,6 @@ function create(warehouseRequestBody, user) {
         x,
         y
     }, user.id, "OPPONENT_BUILD_WAREHOUSE", () => `${user.username} build a warehouse.`);
-
-    // TODO: Add event emitter for warehouse created!
-
     return warehouse;
 }
 
@@ -210,6 +209,7 @@ const self = {
                     WHERE id = ?`).run(user.hammer, user.id);
         const warehouse = getByPosition({x: requestBody.x, y: requestBody.y});
         const updatedUser = userService.updateUserValues(user.id);
+        event.emit(event.WAREHOUSE_UPGRADED, {userId: user.id, ...requestBody});
         if (websocket.connections[user.username]) {
             websocket.connections[user.username].emit("UPDATE_USER", updatedUser);
         }

@@ -106,10 +106,6 @@ function getAllUsers() {
     return users;
 }
 
-function getRanking() {
-    return db.prepare("SELECT username, level, id FROM user ORDER BY level DESC;").all();
-}
-
 /**
  * @param {string} ip
  * @param {string} userId
@@ -261,7 +257,27 @@ const self = {
         timer.end("CLEANED_UP_USERS");
     },
 
-    getRanking,
+    /**
+     * @typedef RankDto
+     * @type object
+     * @property {string} username
+     * @property {number} level
+     * @property {number} id
+     * @property {number} castles
+     *
+     * @return {RankDto[]}
+     */
+    getRanking() {
+        return db.prepare(`SELECT user.username,
+                                  user.level     as level,
+                                  user.id,
+                                  COUNT(c.ROWID) as castles
+                           FROM user
+                                    LEFT JOIN castle c on user.id = c.user_id
+                           GROUP BY user.id
+                           ORDER BY user.level DESC;`).all();
+    },
+
     checkIpForRegistration,
     claimDailyReward,
     getPlayersHome,

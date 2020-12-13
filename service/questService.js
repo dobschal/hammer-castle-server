@@ -1,6 +1,8 @@
 const database = require("../lib/database");
 const event = require("../lib/event");
 const websocketService = require("../service/websocketService");
+const actionLogService = require("../service/actionLogService");
+const localeService = require("../service/localeService");
 const ConflictError = require("../error/ConflictError");
 
 //  Logic:
@@ -44,6 +46,48 @@ const self = {
         AMOUNT_OF_CASTLES(quest, condition, userId, props) {
             const {count} = database
                 .prepare("select count(*) as count from castle where user_id = @userId")
+                .get({userId});
+            return count >= parseInt(condition.value);
+        },
+
+        /**
+         * @param {QuestEntity} quest
+         * @param {QuestConditionEntity} condition
+         * @param {number} userId
+         * @param {*} [props]
+         * @return {boolean}
+         */
+        AMOUNT_OF_WAREHOUSES(quest, condition, userId, props) {
+            const {count} = database
+                .prepare("select count(*) as count from warehouse where user_id = @userId")
+                .get({userId});
+            return count >= parseInt(condition.value);
+        },
+
+        /**
+         * @param {QuestEntity} quest
+         * @param {QuestConditionEntity} condition
+         * @param {number} userId
+         * @param {*} [props]
+         * @return {boolean}
+         */
+        AMOUNT_OF_KNIGHTS(quest, condition, userId, props) {
+            const {count} = database
+                .prepare("select count(*) as count from knight where userId = @userId")
+                .get({userId});
+            return count >= parseInt(condition.value);
+        },
+
+        /**
+         * @param {QuestEntity} quest
+         * @param {QuestConditionEntity} condition
+         * @param {number} userId
+         * @param {*} [props]
+         * @return {boolean}
+         */
+        AMOUNT_OF_WAREHOUSES_LEVEL_2(quest, condition, userId, props) {
+            const {count} = database
+                .prepare("select count(*) as count from warehouse where user_id = @userId AND warehouse.level == 2")
                 .get({userId});
             return count >= parseInt(condition.value);
         }
@@ -92,8 +136,8 @@ const self = {
             database
                 .prepare("update user_quest set status='SOLVED_NEW' where questId = @questId and userId = @userId")
                 .run({questId: quest.id, userId});
-            const {username} = database
-                .prepare("select username from user where id=@userId;")
+            const {username, x, y, locale} = database
+                .prepare("select username, startX as x, startY as y, locale from user where id=@userId;")
                 .get({userId});
             websocketService.sendTo(username, "UPDATE_QUEST", {
                 status: "SOLVED_NEW",
@@ -276,9 +320,15 @@ const self = {
             default:
                 throw new Error("Internal server error, benefit type of quest is not correct! " + userQuest.benefitType);
         }
-
-        // TODO: add action log with live preview to show the user the reward...
-
+        const message = localeService.translate(
+            userQuest.benefitType === "HAMMER" ? "quest.solvedGotHammer" : "quest.solvedGotBeer",
+            user.locale,
+            [userQuest.benefitValue]
+        );
+        actionLogService.save(message, user.id, user.username, {
+            x: user.startX,
+            y: user.startY
+        }, "QUEST_SOLVED");
     }
 };
 

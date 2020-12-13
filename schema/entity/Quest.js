@@ -8,6 +8,7 @@ module.exports = {
         messageKey: {type: "string"},
         imageName: {type: "string"},
         benefitType: {type: "string"},
-        benefitValue: {type: "number"}
+        benefitValue: {type: "number"},
+        autoOpen: {type: "number"} // boolean
     }
 };

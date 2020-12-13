@@ -1,5 +1,9 @@
 {
     "error": {
         "userNotFound": "The user does not exist."
+    },
+    "quest": {
+        "solvedGotHammer": "You have solved a quest and earned {} hammer!",
+        "solvedGotBeer": "You have solved a quest and earned {} beer!"
     }
 }

@@ -18,6 +18,7 @@ module.exports = {
         last_active_at: {type: "number"},
         last_daily_reward_claim: {type: "number"},
         beer: {type: "number"},
-        max_beer: {type: "number"}
+        max_beer: {type: "number"},
+        locale: {type: "string"}
     }
 };

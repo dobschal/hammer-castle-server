@@ -45,6 +45,9 @@ module.exports = {
      * @param {UserEntity} user
      */
     getAllOfUser(user) {
-        return db.prepare("SELECT * FROM action_log WHERE user_id=?;").all(user.id);
+
+        // TODO: add action log pagination
+
+        return db.prepare("SELECT * FROM action_log WHERE user_id=? LIMIT 100;").all(user.id);
     }
 };
